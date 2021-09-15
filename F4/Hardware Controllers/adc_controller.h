@@ -35,6 +35,14 @@ struct ADC_Struct
 	double			offset;
 };
 
+struct ADC_InitStruct
+{
+	DMA_TypeDef* 	dma;
+	uint32_t		dma_stream;
+	uint32_t		dma_channel;
+};
+	
+
 struct ADC_Flags
 {
 	bool temp:1;
@@ -50,7 +58,7 @@ class ADCController
 	public:
 		ADCController();
 		~ADCController();
-		void Init(uint8_t samples=5);
+		void Init(ADC_InitStruct, uint8_t samples=5);
 		void SetSamplingTime(uint32_t sampling);
 		void AddLine(ADC_Struct);
 		void AddInnerVoltageLine();
@@ -75,12 +83,14 @@ class ADCController
 	
 		uint32_t sampling;
 		uint8_t size,samples;
-		ADC_Struct	*adc;
 		uint32_t *meas;
 		double *results;
 		uint8_t buf_cnt;
 		double inner_voltage,inner_voltage_coeff;
+	
 		ADC_Flags flags;
+		ADC_Struct	*adc;
+		ADC_InitStruct init;
 };
 
 

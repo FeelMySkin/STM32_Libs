@@ -49,9 +49,9 @@ void ADCController::AddInnerVoltageLine()
 }
 //
 
-void ADCController::Init(uint8_t samples)
+void ADCController::Init(ADC_InitStruct in_str, uint8_t samples)
 {
-	
+	init = in_str;
 	this->samples = samples;
 	SortLines();
 	InitMemory();
@@ -118,7 +118,7 @@ void ADCController::SetSamplingTime(uint32_t sampling)
 void ADCController::InitDMA()
 {	
 	LL_DMA_InitTypeDef dma;
-	dma.Channel = ADC_DMA_CH;
+	dma.Channel = init.dma_channel;
 	dma.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
 	dma.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
 	dma.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
@@ -133,10 +133,10 @@ void ADCController::InitDMA()
 	dma.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_WORD;
 	dma.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
 	dma.Priority = LL_DMA_PRIORITY_HIGH;
-	LL_DMA_Init(ADC_DMA,ADC_DMA_STREAM,&dma);
+	LL_DMA_Init(init.dma,init.dma_stream,&dma);
 	
-	LL_DMA_EnableIT_TC(ADC_DMA,ADC_DMA_STREAM);
-	LL_DMA_EnableStream(ADC_DMA,ADC_DMA_STREAM);
+	LL_DMA_EnableIT_TC(init.dma,init.dma_stream);
+	LL_DMA_EnableStream(init.dma,init.dma_stream);
 	
 }
 //
@@ -153,8 +153,9 @@ void ADCController::InitMemory()
 
 void ADCController::EnableDmaInterrupt(bool stat)
 {
-	if(stat) EnableDmaIRQn(ADC_DMA,ADC_DMA_STREAM,1);
-	else DisableDmaIRQn(ADC_DMA,ADC_DMA_STREAM);
+	if(stat) EnableDmaIRQn(init.dma,init.dma_stream,1);
+	else DisableDmaIRQn(init.dma,init.dma_stream
+		);
 }
 //
 
