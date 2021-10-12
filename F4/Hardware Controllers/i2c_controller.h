@@ -12,7 +12,6 @@ struct I2CController_TypeDef
 	uint32_t		SDA_PIN;
 	uint32_t		I2C_SDA_AF;
 	uint32_t		I2C_SCL_AF;
-	uint32_t		TIMING;
 };
 
 enum I2C_RESULT
