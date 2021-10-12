@@ -341,6 +341,7 @@ void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t stream,uint8_t priority)
 			NVIC_SetPriority(DMA1_Stream7_IRQn,priority);
 		}
 	}
+	#ifdef DMA2
 	else if(dma == DMA2)
 	{
 		if(stream == LL_DMA_STREAM_0)
@@ -385,6 +386,7 @@ void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t stream,uint8_t priority)
 			NVIC_SetPriority(DMA2_Stream7_IRQn,priority);
 		}
 	}
+	#endif
 }
 //
 
