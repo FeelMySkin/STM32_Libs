@@ -220,7 +220,7 @@ void ADCController::Process(uint32_t ch)
 	switch(adc[ptr].type)
 	{
 		case ADC_TYPE_CURRENT:
-			results[ptr] = ((meas_getter*inner_voltage_coeff + adc[ptr].offset)*adc[ptr].coeff)*1000.0;
+			results[ptr] = ((meas_getter*inner_voltage_coeff + adc[ptr].offset)*adc[ptr].coeff)*1000.0; //mA
 			break;
 		
 		case ADC_TYPE_POS_RESISTANCE:
