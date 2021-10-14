@@ -3,9 +3,12 @@
 
 #include "defines.h"
 
-#define DALI_HYST 	180
+#define DALI_HYST 			180
 #define DEBUG_RECEIVER
-#define DALI_HALFBIT		417 //in us
+#define DALI_BAUDS_COUNT	4
+//#define DALI_HALFBIT		417 //in us
+
+const uint16_t DALI_BAUDS[DALI_BAUDS_COUNT] = {1200,2400,4800,9600};
 
 enum DALI_LOGIC
 {
@@ -31,8 +34,8 @@ class DaliController
 		DaliController();
 		~DaliController();
 		void Init(DALI_InitTypeDef);
-		void Send(uint32_t,uint8_t);
-		void SendDelayed(uint32_t, uint8_t, uint32_t delay = 5000);
+		void Send(uint32_t,uint8_t, uint16_t baud = DALI_BAUDS[0]);
+		void SendDelayed(uint32_t, uint8_t, uint32_t delay = 5000, uint16_t baud = DALI_BAUDS[0]);
 		void Process(bool);
 		void EnableRecvInterrupt(bool state);
 		void EnableKZCheck(bool state);

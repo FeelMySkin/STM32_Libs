@@ -96,7 +96,7 @@ void DaliHW::StopReceiving()
 }
 //
 
-void DaliHW::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay)
+void DaliController::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay, uint16_t baud)
 {
 	send_completed = false;
 	uint32_t to_send =(1<<(n_bits)) | mess;
@@ -104,22 +104,24 @@ void DaliHW::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay)
 	for(int i = 0;i<n_bits+1;++i) bits[i] = (to_send>>(n_bits-i))&1;
 	send_len = 0;
 	
+	uint8_t halfbit = (1000000/baud)/2;
+	
 	for(int i = 0;i<n_bits+1;++i)
 	{
 		if(i == 0 || bits[i] == bits[i-1]) 
 		{
-			send_buf[send_len] = DALI_HALFBIT;
+			send_buf[send_len] = halfbit;
 			send_len++;
 		}
 		
 		if(i == n_bits || bits[i] == bits[i+1])
 		{
-			send_buf[send_len] = DALI_HALFBIT;
+			send_buf[send_len] = halfbit;
 			send_len++;
 		}
 		else
 		{
-			send_buf[send_len] = 2*DALI_HALFBIT;
+			send_buf[send_len] = 2*halfbit;
 			send_len++;
 		}
 	}
@@ -140,7 +142,7 @@ void DaliHW::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay)
 }
 //
 
-void DaliHW::Send(uint32_t mess,uint8_t n_bits)
+void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
 {
 	send_completed = false;
 	uint32_t to_send =(1<<(n_bits)) | mess;
@@ -148,22 +150,24 @@ void DaliHW::Send(uint32_t mess,uint8_t n_bits)
 	for(int i = 0;i<n_bits+1;++i) bits[i] = (to_send>>(n_bits-i))&1;
 	send_len = 0;
 	
+	uint16_t halfbit = (1000000/baud)/2;
+	
 	for(int i = 0;i<n_bits+1;++i)
 	{
 		if(i == 0 || bits[i] == bits[i-1]) 
 		{
-			send_buf[send_len] = DALI_HALFBIT;
+			send_buf[send_len] = halfbit;
 			send_len++;
 		}
 		
 		if(i == n_bits || bits[i] == bits[i+1])
 		{
-			send_buf[send_len] = DALI_HALFBIT;
+			send_buf[send_len] = halfbit;
 			send_len++;
 		}
 		else
 		{
-			send_buf[send_len] = 2*DALI_HALFBIT;
+			send_buf[send_len] = 2*halfbit;
 			send_len++;
 		}
 	}
@@ -172,13 +176,22 @@ void DaliHW::Send(uint32_t mess,uint8_t n_bits)
 }
 //
 
-void DaliHW::ReadData()
+void DaliController::ReadData()
 {
+	uint16_t baud = 1000000/(recv_buf[0]*2);
+	for(uint8_t i = 0;i<DALI_BAUDS_COUNT;++i)
+	{
+		if(baud>=DALI_BAUDS[i]-150 && baud<=DALI_BAUDS[i]+150)
+		{			
+			baud = (1000000/DALI_BAUDS[i])/2;
+		}
+	}
+	
 	for(int i = 0;i<recv_cnt;++i)
 	{
-		if(recv_buf[i]>=DALI_HALFBIT-DALI_HYST && recv_buf[i]<=DALI_HALFBIT+DALI_HYST) recv_buf[i] = 1;
-		else if(recv_buf[i]>=2*DALI_HALFBIT-DALI_HYST && recv_buf[i]<=2*DALI_HALFBIT+DALI_HYST) recv_buf[i] = 2;
-		else if(recv_buf[i]>=4*DALI_HALFBIT-DALI_HYST || recv_buf[i]<=30) recv_buf[i] = 4;
+		if(recv_buf[i]>=baud-DALI_HYST && recv_buf[i]<=baud+DALI_HYST) recv_buf[i] = 1;
+		else if(recv_buf[i]>=2*baud-DALI_HYST && recv_buf[i]<=2*baud+DALI_HYST) recv_buf[i] = 2;
+		else if(recv_buf[i]>=4*baud-DALI_HYST || recv_buf[i]<=30) recv_buf[i] = 4;
 		else recv_buf[i] = 3;
 	}
 	if(recv_cnt<=5) return;
@@ -266,7 +279,7 @@ void DaliHW::Process(bool tim_flag)
 	{
 		receive_completed = false;
 		receiving = true;
-		LL_TIM_SetAutoReload(dali.dali_tim,4*DALI_HALFBIT);
+		LL_TIM_SetAutoReload(dali.dali_tim,4*417);
 		LL_TIM_SetCounter(dali.dali_tim,0);
 		LL_TIM_EnableCounter(dali.dali_tim);
 		recv_cnt = 0;
