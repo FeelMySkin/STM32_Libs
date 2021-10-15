@@ -36,7 +36,7 @@ void DaliController::Init(DALI_InitTypeDef get)
 void DaliController::InitGPIO()
 {
 	LL_GPIO_InitTypeDef gpio;
-	gpio.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
+	gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
 	gpio.Pull = LL_GPIO_PULL_NO;
 	gpio.Speed = LL_GPIO_SPEED_FREQ_HIGH;
 	

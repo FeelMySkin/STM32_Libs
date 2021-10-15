@@ -153,7 +153,7 @@ void LIS2DE::WriteRegister(uint8_t reg, uint8_t data)
 
 uint8_t LIS2DE::ReadRegister(uint8_t reg)
 {
-	uint8_t ret;
+	//uint8_t ret;
 	lis.i2c->WriteBytes(LIS2DE_ADDRESS,&reg,1);
 	lis.i2c->ReadBytes(LIS2DE_ADDRESS,1);
 	return lis.i2c->received[0];
