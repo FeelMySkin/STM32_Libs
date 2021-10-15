@@ -48,6 +48,7 @@ class DaliController
 		bool kz_state;
 		uint32_t received;
 		uint8_t recv_bytes;
+		uint16_t last_baud;
 	
 	private:
 		void InitGPIO();

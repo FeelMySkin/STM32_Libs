@@ -45,6 +45,7 @@ void DaliController::InitGPIO()
 	LL_GPIO_Init(dali.dali_tx_gpio,&gpio);
 	
 	gpio.Mode = LL_GPIO_MODE_INPUT;
+	gpio.Pull = LL_GPIO_PULL_UP;
 	gpio.Pin = dali.dali_rx_pin;
 	LL_GPIO_Init(dali.dali_rx_gpio,&gpio);
 	SetHigh();
@@ -184,6 +185,7 @@ void DaliController::ReadData()
 		if(baud>=DALI_BAUDS[i]-150 && baud<=DALI_BAUDS[i]+150)
 		{			
 			baud = (1000000/DALI_BAUDS[i])/2;
+			last_baud = DALI_BAUDS[i];
 		}
 	}
 	
