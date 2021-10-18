@@ -29,7 +29,7 @@ void CounterList::AddCounter(void* ptr,uint8_t size)
 }
 //
 
-void CounterList::IncreaseAll()
+void CounterList::IncreaseAll(uint8_t points)
 {
 	ListStruct *buf = str;
 	for(int i = 0;i<size;++i)
@@ -37,19 +37,19 @@ void CounterList::IncreaseAll()
 		switch(buf->size)
 		{
 			case 1:
-				(*((uint8_t*)buf->ptr))++;
+				(*((uint8_t*)buf->ptr))+=points;
 			break;
 			
 			case 2: 
-				(*((uint16_t*)buf->ptr))++;
+				(*((uint16_t*)buf->ptr))+=points;
 			break;
 			
 			case 4:
-				(*((uint32_t*)buf->ptr))++;
+				(*((uint32_t*)buf->ptr))+=points;
 			break;
 			
 			case 8:
-				(*((uint64_t*)buf->ptr))++;
+				(*((uint64_t*)buf->ptr))+=points;
 			break;
 			
 			default:
@@ -60,7 +60,7 @@ void CounterList::IncreaseAll()
 }
 //
 
-void CounterList::DecreaseAll()
+void CounterList::DecreaseAll(uint8_t points)
 {
 	ListStruct *buf = str;
 	for(int i = 0;i<size;++i)
@@ -68,19 +68,19 @@ void CounterList::DecreaseAll()
 		switch(buf->size)
 		{
 			case 1:
-				(*((uint8_t*)buf->ptr))--;
+				(*((uint8_t*)buf->ptr))-=points;
 			break;
 			
 			case 2: 
-				(*((uint16_t*)buf->ptr))--;
+				(*((uint16_t*)buf->ptr))-=points;
 			break;
 			
 			case 4:
-				(*((uint32_t*)buf->ptr))--;
+				(*((uint32_t*)buf->ptr))-=points;
 			break;
 			
 			case 8:
-				(*((uint64_t*)buf->ptr))--;
+				(*((uint64_t*)buf->ptr))-=points;
 			break;
 			
 			default:
