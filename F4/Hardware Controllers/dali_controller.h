@@ -3,7 +3,7 @@
 
 #include "defines.h"
 
-#define DALI_HYST 			180
+#define DALI_HYST 			250
 #define DEBUG_RECEIVER
 #define DALI_BAUDS_COUNT	4
 //#define DALI_HALFBIT		417 //in us
