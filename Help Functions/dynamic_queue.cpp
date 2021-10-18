@@ -32,6 +32,17 @@ T DynamicQueue<T>::pop()
 //
 
 template <class T>
+T DynamicQueue<T>::get(uint16_t ptr)
+{
+	if (ptr > size) return NULL;
+	T back = body[ptr];
+	for(int i = ptr;i<size-1;++i) body[i] = body[i+1];
+	size--;
+	return back;
+}
+//
+
+template <class T>
 uint16_t DynamicQueue<T>::GetSize()
 {
 	return size;

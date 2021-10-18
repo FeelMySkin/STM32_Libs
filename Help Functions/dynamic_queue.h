@@ -11,6 +11,7 @@ class DynamicQueue
 		void push(T);
 		bool IsExists(T);
 		T pop();
+		T get(uint16_t);
 		uint16_t GetSize();
 		
 	private:
