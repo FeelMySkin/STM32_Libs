@@ -5,13 +5,14 @@
 
 struct I2CController_TypeDef
 {
-	I2C_TypeDef*	I2C;
-	GPIO_TypeDef*	SCL_GPIO;
-	GPIO_TypeDef*	SDA_GPIO;
-	uint32_t		SCL_PIN;
-	uint32_t		SDA_PIN;
-	uint32_t		I2C_SDA_AF;
-	uint32_t		I2C_SCL_AF;
+	I2C_TypeDef*	i2c;
+	TIM_TypeDef*	help_tim;
+	GPIO_TypeDef*	scl_gpio;
+	GPIO_TypeDef*	sda_gpio;
+	uint32_t		scl_pin;
+	uint32_t		sda_pin;
+	uint32_t		i2c_sda_af;
+	uint32_t		i2c_scl_af;
 };
 
 enum I2C_RESULT
@@ -29,6 +30,8 @@ class I2CController
         void Init(I2CController_TypeDef);
 		I2C_RESULT WriteBytes(uint8_t addr,uint8_t* bytes,uint8_t len);
 		I2C_RESULT ReadBytes(uint8_t addr,uint8_t len);
+		I2C_RESULT ReadRegister(uint8_t addr, uint8_t reg, uint8_t len);
+		I2C_RESULT WriteRegister(uint8_t addr, uint8_t reg, uint8_t* bytes, uint8_t len);
 		I2C_RESULT TransceiveBytes(uint8_t addr,uint8_t* s_bytes, uint8_t s_len, uint8_t r_len);
 		void TimeoutHandler();
 		void SoftReset();
@@ -43,8 +46,9 @@ class I2CController
 		void InitGPIO();
 		void InitI2C();
 		void InitDMA();
-		void SetTimeout(uint8_t msec=100);
+		void InitTIM();
 		void HardReset();
+		void SetTimeout();
 	
 		volatile bool timeout;
 		volatile uint32_t timer;
