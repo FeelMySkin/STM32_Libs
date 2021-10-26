@@ -3,7 +3,7 @@
 
 #include "defines.h"
 
-#define DALI_HYST 			180
+#define DALI_HYST 			250
 #define DEBUG_RECEIVER
 #define DALI_BAUDS_COUNT	4
 //#define DALI_HALFBIT		417 //in us
@@ -48,7 +48,7 @@ class DaliController
 		bool kz_state;
 		uint32_t received;
 		uint8_t recv_bytes;
-		uint16_t last_baud;
+		//uint16_t last_baud;
 	
 	private:
 		void InitGPIO();

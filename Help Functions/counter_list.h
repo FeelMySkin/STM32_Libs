@@ -17,8 +17,8 @@ class CounterList
 		CounterList();
 		void AddCounter(void* ptr,uint8_t size);
 		void RemoveCounter(void* ptr);
-		void IncreaseAll();
-		void DecreaseAll();
+		void IncreaseAll(uint8_t points = 1);
+		void DecreaseAll(uint8_t points = 1);
 	private:
 		ListStruct* str;
 		uint8_t size;

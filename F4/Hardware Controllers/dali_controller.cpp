@@ -151,7 +151,8 @@ void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
 	for(int i = 0;i<n_bits+1;++i) bits[i] = (to_send>>(n_bits-i))&1;
 	send_len = 0;
 	
-	uint16_t halfbit = (1000000/baud)/2;
+	//uint16_t halfbit = (1000000/baud)/2;
+	uint16_t halfbit = 417;
 	
 	for(int i = 0;i<n_bits+1;++i)
 	{
@@ -179,7 +180,7 @@ void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
 
 void DaliController::ReadData()
 {
-	uint16_t baud = 1000000/(recv_buf[0]*2);
+	/*uint16_t baud = 1000000/(recv_buf[0]*2);
 	for(uint8_t i = 0;i<DALI_BAUDS_COUNT;++i)
 	{
 		if(baud>=DALI_BAUDS[i]-150 && baud<=DALI_BAUDS[i]+150)
@@ -187,7 +188,9 @@ void DaliController::ReadData()
 			baud = (1000000/DALI_BAUDS[i])/2;
 			last_baud = DALI_BAUDS[i];
 		}
-	}
+	}*/
+	
+	uint16_t baud = 417;
 	
 	for(int i = 0;i<recv_cnt;++i)
 	{
@@ -252,6 +255,7 @@ void DaliController::Process(bool tim_flag)
 	{
 		if(!tim_flag)
 		{
+			if(LL_TIM_GetCounter(dali.dali_tim) <=30) return;
 			recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
 			LL_TIM_DisableCounter(dali.dali_tim);
 			LL_TIM_SetCounter(dali.dali_tim,0);
