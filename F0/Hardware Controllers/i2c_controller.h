@@ -17,9 +17,9 @@ struct I2CController_TypeDef
 
 enum I2C_RESULT
 {
-	TIMEOUT,
-	RECV_OK,
-	WRITE_OK
+	I2C_TIMEOUT,
+	I2C_RECV_OK,
+	I2C_WRITE_OK
 };
 
 class I2CController
@@ -30,8 +30,9 @@ class I2CController
         void Init(I2CController_TypeDef);
 		I2C_RESULT WriteBytes(uint8_t addr,uint8_t* bytes,uint8_t len);
 		I2C_RESULT ReadBytes(uint8_t addr,uint8_t len);
+		I2C_RESULT TransceiveBytes(uint8_t addr,uint8_t* s_bytes, uint8_t s_len, uint8_t r_len);
 		I2C_RESULT ReadRegister(uint8_t addr, uint8_t reg, uint8_t len);
-		I2C_RESULT WriteRegister(uint8_t addr, uint8_t reg, uint8_t* bytes, uint8_t len, bool restart=false);
+		I2C_RESULT WriteRegister(uint8_t addr, uint8_t reg, uint8_t* bytes, uint8_t len);
 		void TimeoutHandler();
 		void SoftReset();
 		void GetAddressList();
@@ -45,6 +46,7 @@ class I2CController
 		void InitI2C();
 		void InitTIM();
 		void InitDMA();
+		void SetTimeout();
 	
 		volatile bool timeout;
 	

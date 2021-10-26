@@ -94,34 +94,52 @@ I2C_RESULT I2CController::WriteBytes(uint8_t addr,uint8_t* bytes,uint8_t len)
 	LL_I2C_ClearFlag_NACK(i2c.i2c);
 	LL_I2C_SetTransferRequest(i2c.i2c,LL_I2C_REQUEST_WRITE);
 	LL_I2C_SetSlaveAddr(i2c.i2c,addr);
+	
 	LL_I2C_SetTransferSize(i2c.i2c,len);
-	LL_I2C_TransmitData8(i2c.i2c,bytes[0]);
 	LL_I2C_GenerateStartCondition(i2c.i2c);
 	
+	SetTimeout();
+	while(!LL_I2C_IsActiveFlag_TXIS(i2c.i2c))
+	{
+		if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
+		{
+			//LL_I2C_GenerateStopCondition(i2c.I2C);
+			return I2C_TIMEOUT;
+		}
+	}
+	
+	
+	LL_I2C_TransmitData8(i2c.i2c,bytes[0]);
 	for(int i = 1;i<len;++i)
 	{
-		LL_TIM_DisableCounter(i2c.help_tim);
-		timeout = false;
-		LL_TIM_SetCounter(i2c.help_tim,0);
-		LL_TIM_EnableCounter(i2c.help_tim);
+		SetTimeout();
 		while(!LL_I2C_IsActiveFlag_TXE(i2c.i2c))
 		{
 			if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
 			{
 				//LL_I2C_GenerateStopCondition(i2c.I2C);
-				return TIMEOUT;
+				return I2C_TIMEOUT;
 			}
 		}
 		LL_I2C_TransmitData8(i2c.i2c,bytes[i]);
 		
 	}
 	
+	SetTimeout();
+		while(!LL_I2C_IsActiveFlag_TXE(i2c.i2c))
+		{
+			if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
+			{
+				//LL_I2C_GenerateStopCondition(i2c.I2C);
+				return I2C_TIMEOUT;
+			}
+		}
 	
 	LL_TIM_DisableCounter(i2c.help_tim);
 	LL_I2C_GenerateStopCondition(i2c.i2c);
 	while(!LL_I2C_IsActiveFlag_STOP(i2c.i2c)) ;
 	
-	return WRITE_OK;
+	return I2C_WRITE_OK;
 }
 //
 
@@ -140,31 +158,16 @@ I2C_RESULT I2CController::ReadBytes(uint8_t addr,uint8_t len)
 	LL_I2C_GenerateStartCondition(i2c.i2c);
 	
 	timeout = false;
-	/*LL_TIM_SetCounter(i2c.TIMER,0);
-	LL_TIM_EnableCounter(i2c.TIMER);
-	
-	while(!LL_I2C_IsActiveFlag_ADDR(i2c.I2C)) 
-	{
-		if(timeout)
-		{
-			LL_I2C_GenerateStopCondition(i2c.I2C);
-			return TIMEOUT;
-		}
-	}
-	LL_TIM_DisableCounter(i2c.TIMER);*/
 	
 	for(int i = 0;i<len;++i)
 	{
-		LL_TIM_DisableCounter(i2c.help_tim);
-		timeout = false;
-		LL_TIM_SetCounter(i2c.help_tim,0);
-		LL_TIM_EnableCounter(i2c.help_tim);
+		SetTimeout();
 		while(!LL_I2C_IsActiveFlag_RXNE(i2c.i2c))
 		{
 			if(timeout)
 			{
 				LL_I2C_GenerateStopCondition(i2c.i2c);
-				return TIMEOUT;
+				return I2C_TIMEOUT;
 			}
 		}
 		received[i] = LL_I2C_ReceiveData8(i2c.i2c);
@@ -173,7 +176,7 @@ I2C_RESULT I2CController::ReadBytes(uint8_t addr,uint8_t len)
 	LL_TIM_DisableCounter(i2c.help_tim);
 	LL_I2C_GenerateStopCondition(i2c.i2c);
 	while(!LL_I2C_IsActiveFlag_STOP(i2c.i2c)) ;
-	return RECV_OK;
+	return I2C_RECV_OK;
 }
 //
 
@@ -186,23 +189,31 @@ I2C_RESULT I2CController::ReadRegister(uint8_t addr, uint8_t reg, uint8_t len)
 	LL_I2C_SetTransferRequest(i2c.i2c,LL_I2C_REQUEST_WRITE);
 	LL_I2C_SetSlaveAddr(i2c.i2c,addr);
 	LL_I2C_SetTransferSize(i2c.i2c,1);
-	LL_I2C_TransmitData8(i2c.i2c,reg);
 	LL_I2C_GenerateStartCondition(i2c.i2c);
 	
-	LL_TIM_DisableCounter(i2c.help_tim);
-	timeout = false;
-	LL_TIM_SetCounter(i2c.help_tim,0);
-	LL_TIM_EnableCounter(i2c.help_tim);
-	while(!LL_I2C_IsActiveFlag_TXE(i2c.i2c))
+	SetTimeout();
+	while(!LL_I2C_IsActiveFlag_TXIS(i2c.i2c))
 	{
 		if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
 		{
 			//LL_I2C_GenerateStopCondition(i2c.I2C);
-			return TIMEOUT;
+			return I2C_TIMEOUT;
 		}
 	}
 	
+	LL_I2C_TransmitData8(i2c.i2c,reg);
+	SetTimeout();
+	while(!LL_I2C_IsActiveFlag_TC(i2c.i2c))
+	{
+		if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
+		{
+			//LL_I2C_GenerateStopCondition(i2c.I2C);
+			return I2C_TIMEOUT;
+		}
+	}
 	
+	if(len == 1) LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_NACK);
+	else LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_ACK);
 	LL_I2C_SetTransferRequest(i2c.i2c,LL_I2C_REQUEST_READ);
 	LL_I2C_SetTransferSize(i2c.i2c,len);
 	LL_I2C_GenerateStartCondition(i2c.i2c);
@@ -210,30 +221,28 @@ I2C_RESULT I2CController::ReadRegister(uint8_t addr, uint8_t reg, uint8_t len)
 	
 	for(int i = 0;i<len;++i)
 	{
-		LL_TIM_DisableCounter(i2c.help_tim);
-		timeout = false;
-		LL_TIM_SetCounter(i2c.help_tim,0);
-		LL_TIM_EnableCounter(i2c.help_tim);
+		SetTimeout();
 		while(!LL_I2C_IsActiveFlag_RXNE(i2c.i2c))
 		{
 			if(timeout)
 			{
 				LL_I2C_GenerateStopCondition(i2c.i2c);
-				return TIMEOUT;
+				return I2C_TIMEOUT;
 			}
 		}
 		received[i] = LL_I2C_ReceiveData8(i2c.i2c);
+		if(i==len-2) LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_NACK);
 	}
 	
 	LL_TIM_DisableCounter(i2c.help_tim);
 	LL_I2C_GenerateStopCondition(i2c.i2c);
 	while(!LL_I2C_IsActiveFlag_STOP(i2c.i2c)) ;
-	return RECV_OK;
+	return I2C_RECV_OK;
 	
 }
 //
 
-I2C_RESULT I2CController::WriteRegister(uint8_t addr, uint8_t reg, uint8_t* bytes, uint8_t len, bool restart)
+I2C_RESULT I2CController::TransceiveBytes(uint8_t addr,uint8_t* s_bytes, uint8_t s_len, uint8_t r_len)
 {
 	addr = addr<<1;
 	if(LL_I2C_IsActiveFlag_BUSY(i2c.i2c)) SoftReset();
@@ -241,77 +250,109 @@ I2C_RESULT I2CController::WriteRegister(uint8_t addr, uint8_t reg, uint8_t* byte
 	LL_I2C_ClearFlag_NACK(i2c.i2c);
 	LL_I2C_SetTransferRequest(i2c.i2c,LL_I2C_REQUEST_WRITE);
 	LL_I2C_SetSlaveAddr(i2c.i2c,addr);
-	if(!restart)
+	
+	LL_I2C_TransmitData8(i2c.i2c,addr);
+	
+	
+	SetTimeout();
+	while(!LL_I2C_IsActiveFlag_TXIS(i2c.i2c))
 	{
-		LL_I2C_SetTransferSize(i2c.i2c,len+1);
-		LL_I2C_TransmitData8(i2c.i2c,reg);
-		LL_I2C_GenerateStartCondition(i2c.i2c);
-		
-		for(int i = 0;i<len+1;++i)
+		if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
 		{
-			LL_TIM_DisableCounter(i2c.help_tim);
-			timeout = false;
-			LL_TIM_SetCounter(i2c.help_tim,0);
-			LL_TIM_EnableCounter(i2c.help_tim);
-			while(!LL_I2C_IsActiveFlag_TXE(i2c.i2c))
-			{
-				if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
-				{
-					LL_I2C_GenerateStopCondition(i2c.i2c);
-					return TIMEOUT;
-				}
-			}
-			if(i == len) break;;
-			LL_I2C_TransmitData8(i2c.i2c,bytes[i]);
-			
+			//LL_I2C_GenerateStopCondition(i2c.I2C);
+			return I2C_TIMEOUT;
 		}
-		
-		
-		
 	}
-	else
+	
+	LL_I2C_TransmitData8(i2c.i2c,s_bytes[0]);
+	
+	for(int i = 1;i<s_len;++i)
 	{
-		LL_TIM_DisableCounter(i2c.help_tim);
-		timeout = false;
-		LL_TIM_SetCounter(i2c.help_tim,0);
-		LL_TIM_EnableCounter(i2c.help_tim);
+		SetTimeout();
 		while(!LL_I2C_IsActiveFlag_TXE(i2c.i2c))
 		{
-			if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
+			if(timeout)
+			{
+				//LL_I2C_GenerateStopCondition(i2c.i2c);
+				return I2C_TIMEOUT;
+			}
+		}
+		LL_I2C_TransmitData8(i2c.i2c,s_bytes[i]);
+		
+	}
+	
+	if(r_len == 1) LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_NACK);
+	else LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_ACK);
+	LL_I2C_SetTransferRequest(i2c.i2c,LL_I2C_REQUEST_READ);
+	LL_I2C_SetTransferSize(i2c.i2c,r_len);
+	LL_I2C_GenerateStartCondition(i2c.i2c);
+	
+	for(int i = 0;i<r_len;++i)
+	{
+		SetTimeout();
+		while(!LL_I2C_IsActiveFlag_RXNE(i2c.i2c))
+		{
+			if(timeout)
 			{
 				LL_I2C_GenerateStopCondition(i2c.i2c);
-				return TIMEOUT;
+				return I2C_TIMEOUT;
 			}
 		}
-			
-		LL_I2C_SetTransferRequest(i2c.i2c,LL_I2C_REQUEST_WRITE);
-		LL_I2C_SetTransferSize(i2c.i2c,len);
-		LL_I2C_TransmitData8(i2c.i2c,bytes[0]);
-		LL_I2C_GenerateStartCondition(i2c.i2c);
-		
-		for(int i = 1;i<len;++i)
-		{
-			LL_TIM_DisableCounter(i2c.help_tim);
-			timeout = false;
-			LL_TIM_SetCounter(i2c.help_tim,0);
-			LL_TIM_EnableCounter(i2c.help_tim);
-			while(!LL_I2C_IsActiveFlag_TXE(i2c.i2c))
-			{
-				if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
-				{
-					LL_I2C_GenerateStopCondition(i2c.i2c);
-					return TIMEOUT;
-				}
-			}
-			LL_I2C_TransmitData8(i2c.i2c,bytes[i]);
-			
-		}
+		received[i] = LL_I2C_ReceiveData8(i2c.i2c);
+		if(i==r_len-2) LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_NACK);
 	}
 	
 	LL_TIM_DisableCounter(i2c.help_tim);
 	LL_I2C_GenerateStopCondition(i2c.i2c);
 	while(!LL_I2C_IsActiveFlag_STOP(i2c.i2c)) ;
-	return I2C_RESULT::WRITE_OK;
+	return I2C_RECV_OK;
+}
+//
+
+I2C_RESULT I2CController::WriteRegister(uint8_t addr, uint8_t reg, uint8_t* bytes, uint8_t len)
+{
+	addr = addr<<1;
+	if(LL_I2C_IsActiveFlag_BUSY(i2c.i2c)) SoftReset();
+	LL_I2C_ClearFlag_STOP(i2c.i2c);
+	LL_I2C_ClearFlag_NACK(i2c.i2c);
+	LL_I2C_SetTransferRequest(i2c.i2c,LL_I2C_REQUEST_WRITE);
+	LL_I2C_SetSlaveAddr(i2c.i2c,addr);
+	
+	LL_I2C_SetTransferSize(i2c.i2c,len+1);
+	LL_I2C_GenerateStartCondition(i2c.i2c);
+	
+	SetTimeout();
+	while(!LL_I2C_IsActiveFlag_TXIS(i2c.i2c))
+	{
+		if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
+		{
+			//LL_I2C_GenerateStopCondition(i2c.I2C);
+			return I2C_TIMEOUT;
+		}
+	}
+	
+	
+	LL_I2C_TransmitData8(i2c.i2c,reg);
+	for(int i = 0;i<len+1;++i)
+	{
+		SetTimeout();
+		while(!LL_I2C_IsActiveFlag_TXE(i2c.i2c))
+		{
+			if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c))
+			{
+				LL_I2C_GenerateStopCondition(i2c.i2c);
+				return I2C_TIMEOUT;
+			}
+		}
+		if(i == len) break;;
+		LL_I2C_TransmitData8(i2c.i2c,bytes[i]);
+		
+	}
+	
+	LL_TIM_DisableCounter(i2c.help_tim);
+	LL_I2C_GenerateStopCondition(i2c.i2c);
+	while(!LL_I2C_IsActiveFlag_STOP(i2c.i2c)) ;
+	return I2C_RESULT::I2C_WRITE_OK;
 }
 //
 
@@ -348,7 +389,7 @@ void I2CController::GetAddressList()
 			LL_TIM_SetCounter(i2c.help_tim,0);
 			LL_TIM_EnableCounter(i2c.help_tim);
 			
-			while(!LL_I2C_IsActiveFlag_ADDR(i2c.i2c)) 
+			while(!LL_I2C_IsActiveFlag_TC(i2c.i2c)) 
 			{
 				if(timeout || LL_I2C_IsActiveFlag_NACK(i2c.i2c) || LL_I2C_IsActiveFlag_STOP(i2c.i2c))
 				{
@@ -356,13 +397,16 @@ void I2CController::GetAddressList()
 				}
 			}
 			LL_TIM_DisableCounter(i2c.help_tim);
-			if(!timeout && !LL_I2C_IsActiveFlag_NACK(i2c.i2c)) addr_list[i]|=1<<j;
+			if(!timeout && !LL_I2C_IsActiveFlag_NACK(i2c.i2c))
+			{				
+				addr_list[i]|=1<<j;
+			}
 			Await(5);
 			
 			//LL_I2C_GenerateStopCondition(i2c.I2C);
 			while(!LL_I2C_IsActiveFlag_STOP(i2c.i2c))
 			{
-				
+				LL_I2C_GenerateStopCondition(i2c.i2c);
 			}
 		}
 	}
@@ -378,5 +422,14 @@ void I2CController::Await(uint8_t msec)
 	while(!timeout) ;
 	LL_TIM_SetAutoReload(i2c.help_tim,10);
 	timeout = false;
+}
+//
+
+void I2CController::SetTimeout()
+{
+	LL_TIM_DisableCounter(i2c.help_tim);
+	timeout = false;
+	LL_TIM_SetCounter(i2c.help_tim,0);
+	LL_TIM_EnableCounter(i2c.help_tim);
 }
 //
