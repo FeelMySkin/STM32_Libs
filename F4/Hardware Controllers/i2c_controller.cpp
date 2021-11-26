@@ -46,8 +46,10 @@ void I2CController::InitI2C()
 	LL_I2C_DisableClockStretching(i2c.i2c);
 	
 	LL_I2C_InitTypeDef i2c_ini;
-	i2c_ini.AnalogFilter = LL_I2C_ANALOGFILTER_ENABLE;
-	i2c_ini.DigitalFilter = 15;
+	#ifdef LL_I2C_ANALOGFILTER_ENABLE
+		i2c_ini.AnalogFilter = LL_I2C_ANALOGFILTER_ENABLE;
+		i2c_ini.DigitalFilter = 15;
+	#endif
 	i2c_ini.OwnAddress1 = 0;
 	i2c_ini.OwnAddrSize = LL_I2C_OWNADDRESS1_7BIT;
 	i2c_ini.DutyCycle = LL_I2C_DUTYCYCLE_2;
