@@ -352,7 +352,7 @@ I2C_RESULT I2CController::WriteRegister(uint8_t addr, uint8_t reg, uint8_t* byte
 	LL_TIM_DisableCounter(i2c.help_tim);
 	LL_I2C_GenerateStopCondition(i2c.i2c);
 	while(!LL_I2C_IsActiveFlag_STOP(i2c.i2c)) ;
-	return I2C_RESULT::I2C_WRITE_OK;
+	return I2C_WRITE_OK;
 }
 //
 

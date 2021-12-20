@@ -44,7 +44,10 @@ void SetExtiSource(GPIO_TypeDef* gpio,uint32_t exti_line)
 	else if(gpio == GPIOB) syscfg_exti_source = LL_SYSCFG_EXTI_PORTB;
 	else if(gpio == GPIOC) syscfg_exti_source = LL_SYSCFG_EXTI_PORTC;
 	else if(gpio == GPIOD) syscfg_exti_source = LL_SYSCFG_EXTI_PORTD;
+	
+	#ifdef GPIOE
 	else if(gpio == GPIOE) syscfg_exti_source = LL_SYSCFG_EXTI_PORTE;
+	#endif
 	
 	switch(exti_line)
 	{
@@ -228,26 +231,34 @@ void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority)
 		NVIC_SetPriority(TIM1_BRK_TIM9_IRQn,priority);
 	}
 	#endif
+	#ifdef TIM14
 	else if(tim == TIM14)
 	{
 		NVIC_EnableIRQ(TIM14_IRQn);
 		NVIC_SetPriority(TIM14_IRQn,priority);
 	}
+	#endif
+	#ifdef TIM15
 	else if(tim == TIM15)
 	{
 		NVIC_EnableIRQ(TIM15_IRQn);
 		NVIC_SetPriority(TIM15_IRQn,priority);
 	}
+	#endif
+	#ifdef TIM16
 	else if(tim == TIM16)
 	{
 		NVIC_EnableIRQ(TIM16_IRQn);
 		NVIC_SetPriority(TIM16_IRQn,priority);
 	}
+	#endif
+	#ifdef TIM17
 	else if(tim == TIM17)
 	{
 		NVIC_EnableIRQ(TIM17_IRQn);
 		NVIC_SetPriority(TIM17_IRQn,priority);
 	}
+	#endif
 
 
 }
@@ -341,43 +352,43 @@ void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t channel,uint8_t priority)
 //
 
 
-/*void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream)
+void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_channel)
 {
-	switch(dma_stream)
+	switch(dma_channel)
 	{
-		case LL_DMA_STREAM_0:
-			LL_DMA_ClearFlag_TC0(dma);
-		break;
-		
-		case LL_DMA_STREAM_1:
+		case LL_DMA_CHANNEL_1:
 			LL_DMA_ClearFlag_TC1(dma);
 		break;
 		
-		case LL_DMA_STREAM_2:
+		case LL_DMA_CHANNEL_2:
 			LL_DMA_ClearFlag_TC2(dma);
 		break;
 		
-		case LL_DMA_STREAM_3:
+		case LL_DMA_CHANNEL_3:
 			LL_DMA_ClearFlag_TC3(dma);
 		break;
 		
-		case LL_DMA_STREAM_4:
+		case LL_DMA_CHANNEL_4:
 			LL_DMA_ClearFlag_TC4(dma);
 		break;
 		
-		case LL_DMA_STREAM_5:
+		case LL_DMA_CHANNEL_5:
 			LL_DMA_ClearFlag_TC5(dma);
 		break;
 		
-		case LL_DMA_STREAM_6:
+		#ifdef LL_DMA_CHANNEL_6
+		case LL_DMA_CHANNEL_6:
 			LL_DMA_ClearFlag_TC6(dma);
 		break;
+		#endif
 		
-		case LL_DMA_STREAM_7:
+		#ifdef LL_DMA_CHANNEL_7
+		case LL_DMA_CHANNEL_7:
 			LL_DMA_ClearFlag_TC7(dma);
 		break;
+		#endif
 	}
-}*/
+}
 //
 
 void EnableUsartIrqn(USART_TypeDef* usart,uint8_t priority)
@@ -459,15 +470,19 @@ void RemapDmaUsart(USART_TypeDef* uart,uint32_t channel)
 		else if(channel == LL_DMA_CHANNEL_4) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART1TX_RMP_DMA1CH4);
 		else if(channel == LL_DMA_CHANNEL_5) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART1RX_RMP_DMA1CH5);
 	}
+	#ifdef USART2
 	else if(uart == USART2)
 	{
 		if(channel == LL_DMA_CHANNEL_5 || channel == LL_DMA_CHANNEL_4) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART2_RMP_DMA1CH54);
 		else if( channel == LL_DMA_CHANNEL_6 || channel == LL_DMA_CHANNEL_7) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART2_RMP_DMA1CH67);
 	}
+	#endif
+	#ifdef USART3
 	else if(uart == USART3)
 	{
 		if(channel == LL_DMA_CHANNEL_2 || channel == LL_DMA_CHANNEL_3) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART3_RMP_DMA1CH32);
 		else if( channel == LL_DMA_CHANNEL_6 || channel == LL_DMA_CHANNEL_7) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART3_RMP_DMA1CH67);
 	}
+	#endif
 }
 //
