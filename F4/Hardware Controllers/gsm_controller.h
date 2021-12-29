@@ -4,6 +4,7 @@
 #include "defines.h"
 #include "cyclic_buffer.h"
 #include "help_functions.h"
+#include "usart_controller.h"
 
 
 #define GSM_BUFFER_SIZE 4096
@@ -26,22 +27,6 @@ enum GSM_MODE
 };
 //
 
-struct GSM_InitTypeDef
-{
-	GPIO_TypeDef*	tx_gpio;
-	GPIO_TypeDef*	rx_gpio;
-	uint32_t		tx_pin;
-	uint32_t		rx_pin;
-	USART_TypeDef*	usart;
-	uint32_t		usart_af;
-	DMA_TypeDef*	tx_dma;
-	uint32_t		tx_dma_stream;
-	uint32_t		tx_dma_channel;
-	uint32_t		baud_rate;
-	GSM_InitTypeDef() { baud_rate = 9600;}
-};
-//
-
 struct SMS
 {
 	char message[200];
@@ -57,7 +42,7 @@ class GSM_Controller
 {
 	public:
 		GSM_Controller();
-		void Init(GSM_InitTypeDef gsm);
+		void Init(UsartController*	usart);
 		void Send(const char *send,uint32_t len);
 		void Send(char ch);
 		void PushBuffer();
@@ -83,14 +68,12 @@ class GSM_Controller
 		SMS sms;
 		GSM_STATUS state;
 		GSM_MODE mode;
-		Cyclic_Buffer<uint8_t,GSM_BUFFER_SIZE> gsm_buf;
+		//Cyclic_Buffer<uint8_t,GSM_BUFFER_SIZE> gsm_buf;
+		uint8_t gsm_buf[GSM_BUFFER_SIZE];
 		uint8_t signal_level;
 		bool line_clear;
 		
 	private:
-		void InitGPIO();
-		void InitUSART();
-		void InitDMA();
 		void Send();
 		bool SetMode(GSM_MODE);
 		bool ReadAnswer(bool no_cr_lf=false);
@@ -100,7 +83,7 @@ class GSM_Controller
 		uint8_t send_buf[400];
 		char answer[512];
 		uint32_t send_len;
-		GSM_InitTypeDef gsm;
+		UsartController*	usart;
 };
 
 #endif

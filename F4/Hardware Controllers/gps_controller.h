@@ -2,19 +2,7 @@
 #define GPS_CONTROLLER_H
 
 #include "defines.h"
-#include "cyclic_buffer.h"
-
-
-struct GPS_InitTypeDef
-{
-	GPIO_TypeDef*	tx_gpio;
-	GPIO_TypeDef*	rx_gpio;
-	uint32_t		tx_pin;
-	uint32_t		rx_pin;
-	USART_TypeDef*	uart;
-	uint32_t		uart_af;
-};
-//
+#include "usart_controller.h"
 
 
 struct RMC_Packet
@@ -38,17 +26,14 @@ class GPS_Controller
 {
 	public:
 		GPS_Controller();
-		void Init(GPS_InitTypeDef);
+		void Init(UsartController*	usart);
 		void Process();
 		void PushBuffer();
 		void ProcessSecond();
 	
 		RMC_Packet rmc;
-		Cyclic_Buffer<char,512> full_buffer;
 	
 	private:
-		void InitGPIO();
-		void InitUART();
 		void ProcessRMC();
 		void ProcessTime();
 	
@@ -58,7 +43,7 @@ class GPS_Controller
 		volatile uint8_t pointer;
 		bool test_bool;
 		uint32_t timeout;
-		GPS_InitTypeDef gps;
+		UsartController*	usart;
 };
 
 #endif

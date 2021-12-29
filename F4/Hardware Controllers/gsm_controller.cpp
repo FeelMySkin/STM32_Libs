@@ -6,86 +6,27 @@ GSM_Controller::GSM_Controller()
 }
 //
 
-void GSM_Controller::Init(GSM_InitTypeDef gsm)
+void GSM_Controller::Init(UsartController*	usart)
 {
-	this->gsm = gsm;
-	gsm_buf.SetOverwrite(false);
-	InitGPIO();
-	InitUSART();
-	InitDMA();
-}
-//
-
-void GSM_Controller::InitGPIO()
-{
-	LL_GPIO_InitTypeDef gpio;
-	gpio.Alternate = gsm.usart_af;
-	gpio.Mode = LL_GPIO_MODE_ALTERNATE;
-	gpio.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-	gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-	gpio.Pull = LL_GPIO_PULL_NO;
-	
-	gpio.Pin = gsm.rx_pin;
-	LL_GPIO_Init(gsm.rx_gpio,&gpio);
-	
-	gpio.Pin = gsm.tx_pin;
-	LL_GPIO_Init(gsm.tx_gpio,&gpio);
-}
-//
-
-void GSM_Controller::InitUSART()
-{
-	LL_USART_Disable(gsm.usart);
-	LL_USART_InitTypeDef usart;
-	usart.BaudRate = gsm.baud_rate;
-	usart.DataWidth = LL_USART_DATAWIDTH_8B;
-	usart.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
-	usart.OverSampling = LL_USART_OVERSAMPLING_8;
-	usart.Parity = LL_USART_PARITY_NONE;
-	usart.StopBits = LL_USART_STOPBITS_1;
-	usart.TransferDirection = LL_USART_DIRECTION_TX_RX;
-	LL_USART_Init(gsm.usart,&usart);
-	
-	LL_USART_EnableDMAReq_TX(gsm.usart);
-	
-	LL_USART_EnableIT_RXNE(gsm.usart);
-	EnableUartIRQn(gsm.usart,1);
-	
-	LL_USART_Enable(gsm.usart);
-}
-//
-
-void GSM_Controller::InitDMA()
-{
-	LL_DMA_InitTypeDef dma;
-	dma.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-	dma.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
-	dma.Mode = LL_DMA_MODE_NORMAL;
-	dma.PeriphOrM2MSrcAddress = (uint32_t)&gsm.usart->DR;
-	dma.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
-	dma.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
-	dma.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
-	dma.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;	
-	dma.MemoryOrM2MDstAddress = (uint32_t)to_send;
-	dma.Channel = gsm.tx_dma_channel;
-	LL_DMA_Init(gsm.tx_dma,gsm.tx_dma_stream,&dma);
+	this->usart = usart;
+	//gsm_buf.SetOverwrite(false);
 }
 //
 
 void GSM_Controller::Send()
 {
-	LL_DMA_SetDataLength(gsm.tx_dma,gsm.tx_dma_stream,send_len);
-	LL_DMA_EnableStream(gsm.tx_dma,gsm.tx_dma_stream);
+	//LL_DMA_SetDataLength(gsm.tx_dma,gsm.tx_dma_stream,send_len);
+	//LL_DMA_EnableStream(gsm.tx_dma,gsm.tx_dma_stream);
 	
 	uint16_t timeout = 0;
-	while(!CheckDmaTCFlag(gsm.tx_dma,gsm.tx_dma_stream) && timeout<=1500)
+	while(!usart->IsSent() && timeout<=1500)
 	{		
 		osDelay(1);
 		timeout++;
 	}
 	
-	LL_DMA_DisableStream(gsm.tx_dma,gsm.tx_dma_stream);
-	ClearDmaTCFlag(gsm.tx_dma,gsm.tx_dma_stream);
+	//LL_DMA_DisableStream(gsm.tx_dma,gsm.tx_dma_stream);
+	//ClearDmaTCFlag(gsm.tx_dma,gsm.tx_dma_stream);
 	
 	osDelay(10);
 	
@@ -94,16 +35,16 @@ void GSM_Controller::Send()
 
 void GSM_Controller::Send(char ch)
 {
-	to_send[0] = ch;
-	send_len = 1;
+	usart->Send(ch);
 	Send();
 }
 //
 
 void GSM_Controller::Send(const char *send, uint32_t len)
 {
-	for(int i = 0;i<len;++i) to_send[i] = send[i];
-	send_len = len;
+	usart->Send((uint8_t*)send, len);
+	/*for(int i = 0;i<len;++i) to_send[i] = send[i];
+	send_len = len;*/
 	Send();
 }
 //
@@ -394,7 +335,7 @@ bool GSM_Controller::CheckSMS()
 
 void GSM_Controller::PushBuffer()
 {
-	gsm_buf.push(LL_USART_ReceiveData8(gsm.usart));
+	//gsm_buf.push(LL_USART_ReceiveData8(usart));
 }
 //
 
@@ -468,25 +409,25 @@ bool GSM_Controller::CheckModem()
 bool GSM_Controller::ReadAnswer(bool no_cr_lf)
 {
 	if(!WaitMessage(false,100)) return false;
-	if(gsm_buf.length() <= 2) return false;
+	if(usart->Length() <= 2) return false;
 	
 	if(!no_cr_lf)
 	{
-		while(gsm_buf.get() !='\r' && gsm_buf.get(1) != '\n')
+		while(usart->GetChar() !='\r' && usart->GetChar(1) != '\n')
 		{	
-			gsm_buf.shift(1);
-			if(gsm_buf.length()<=2) return false;
+			usart->ShiftTail(1);
+			if(usart->Length()<=2) return false;
 		}
-		while(gsm_buf.get() == '\r' || gsm_buf.get() == '\n') gsm_buf.shift(1);
+		while(usart->GetChar() == '\r' || usart->GetChar() == '\n') usart->ShiftTail(1);
 	}
 	
-	for(int i = 0;gsm_buf.get() != '\r';++i)
+	for(int i = 0;usart->GetChar() != '\r';++i)
 	{	
-		if(gsm_buf.length() == 0) return false;
-		answer[i] = gsm_buf.pull();
+		if(usart->Length() == 0) return false;
+		answer[i] = usart->Pull();
 		answer[i+1] = 0;
 	}
-	gsm_buf.shift(2);
+	usart->ShiftTail(2);
 	return true;
 	
 }
@@ -577,12 +518,12 @@ bool GSM_Controller::WaitMessage(bool clear,uint32_t timeout)
 	uint16_t buf_len = 0;
 	if(timeout == 0) timeout = 0xFFFFFF;
 	else timeout+=1;
-	while(buf_len != gsm_buf.length() && gsm_buf.length() != 0 && timeout--)
+	while(buf_len != usart->Length() && usart->Length() != 0 && timeout--)
 	{
-		buf_len = gsm_buf.length();
+		buf_len = usart->Length();
 		osDelay(100);
 	}
-	if(clear)gsm_buf.clear();
+	if(clear)usart->ClearBuffer();
 	if(timeout == 0) return false;
 	else return true;
 }
@@ -824,7 +765,8 @@ void GSM_Controller::SaveTime(TIME_DATE time)
 
 void GSM_Controller::SetBaud(uint32_t baud)
 {
-	gsm.baud_rate = baud;
-	InitUSART();
+	usart->SetBaud(baud);
+	//gsm.baud_rate = baud;
+	//InitUSART();
 }
 //

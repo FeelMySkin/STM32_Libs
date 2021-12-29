@@ -6,66 +6,28 @@ GPS_Controller::GPS_Controller()
 	main_flags.desync = true;
 	pointer = 0;
 	timeout = 0;
+	//full_buffer.SetSize(512);
 }
 //
 
-void GPS_Controller::Init(GPS_InitTypeDef gps)
+void GPS_Controller::Init(UsartController*	usart)
 {
-	this->gps = gps;
-	InitGPIO();
-	InitUART();
+	this->usart = usart;
+	//InitGPIO();
+	//InitUART();
 	char gtk[18] = "$PMTK869,2,1*36\r\n";
-	for(int i = 0;i<17;++i)
+	usart->Send(gtk);
+	while(!usart->IsSent())
 	{
-		LL_USART_TransmitData8(gps.uart,gtk[i]);
-		while(!LL_USART_IsActiveFlag_TC(gps.uart)) asm("NOP");
+		osDelay(5);
 	}
 	rmc.signal_level = 0;
 }
 //
 
-void GPS_Controller::InitGPIO()
-{
-	LL_GPIO_InitTypeDef gpio;
-	gpio.Alternate = gps.uart_af;
-	gpio.Mode = LL_GPIO_MODE_ALTERNATE;
-	gpio.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-	gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-	gpio.Pull = LL_GPIO_PULL_NO;
-	
-	gpio.Pin = gps.rx_pin;
-	LL_GPIO_Init(gps.rx_gpio,&gpio);
-	
-	gpio.Pin = gps.tx_pin;
-	LL_GPIO_Init(gps.tx_gpio,&gpio);
-}
-//
-
-void GPS_Controller::InitUART()
-{
-	LL_USART_InitTypeDef usart;
-	usart.BaudRate = 9600;
-	usart.DataWidth = LL_USART_DATAWIDTH_8B;
-	usart.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
-	usart.OverSampling = LL_USART_OVERSAMPLING_8;
-	usart.Parity = LL_USART_PARITY_NONE;
-	usart.StopBits = LL_USART_STOPBITS_1;
-	usart.TransferDirection = LL_USART_DIRECTION_TX_RX;
-	LL_USART_Init(gps.uart,&usart);
-	
-	//LL_USART_EnableDMAReq_TX(gps.uart);
-	
-	LL_USART_EnableIT_RXNE(gps.uart);
-	EnableUartIRQn(gps.uart,0);
-	
-	
-	LL_USART_Enable(gps.uart);
-}
-//
-
 void GPS_Controller::PushBuffer()
 {
-	full_buffer.push(LL_USART_ReceiveData8(gps.uart));
+	//full_buffer.push(LL_USART_ReceiveData8(gps.uart));
 }
 //
 
@@ -230,14 +192,14 @@ void GPS_Controller::Process()
 	
 	if(pointer ==0 )
 	{
-		while(full_buffer.length() >= 11)
+		while(usart->Length() >= 11)
 		{
-			if(full_buffer.pull() == '$')
+			if(usart->Pull() == '$')
 			{
 				ptr = 0;
-				while(full_buffer.get() != ',' && full_buffer.get() != '*')
+				while(usart->GetChar() != ',' && usart->GetChar() != '*')
 				{
-					log_buf[ptr] = full_buffer.pull();
+					log_buf[ptr] = usart->Pull();
 					ptr++;
 					if(ptr == 12) break;
 					log_buf[ptr] = 0;
@@ -259,9 +221,9 @@ void GPS_Controller::Process()
 		
 		if(pointer != 0)
 		{
-			while(full_buffer.length()>0)
+			while(usart->Length()>0)
 			{
-				rmc_buffer[pointer] = full_buffer.pull();
+				rmc_buffer[pointer] = usart->Pull();
 				pointer++;
 				
 				if(pointer==100)
@@ -271,7 +233,7 @@ void GPS_Controller::Process()
 				}
 				rmc_buffer[pointer] = 0;
 				
-				if(full_buffer.get() == '\r' || full_buffer.get() == '\n')
+				if(usart->GetChar() == '\r' || usart->GetChar() == '\n')
 				{
 					completed = true;
 					break;
