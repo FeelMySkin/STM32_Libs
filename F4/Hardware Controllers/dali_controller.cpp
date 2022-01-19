@@ -45,7 +45,7 @@ void DaliController::InitGPIO()
 	LL_GPIO_Init(dali.dali_tx_gpio,&gpio);
 	
 	gpio.Mode = LL_GPIO_MODE_INPUT;
-	gpio.Pull = LL_GPIO_PULL_UP;
+	gpio.Pull = LL_GPIO_PULL_NO;
 	gpio.Pin = dali.dali_rx_pin;
 	LL_GPIO_Init(dali.dali_rx_gpio,&gpio);
 	SetHigh();
