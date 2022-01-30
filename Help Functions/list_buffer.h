@@ -9,6 +9,7 @@ class ListBuffer
 	public:
 		ListBuffer();
 		void Add(T n);
+		void Delete(uint16_t ptr);
 		T& operator[](uint16_t idx);
 		uint16_t Size() {return size;}
 	
@@ -19,6 +20,7 @@ class ListBuffer
 	{
 		T buffer;
 		Buffer *next;
+		~Buffer() {delete &buffer;}
 	}*buffer;
 	//
 	
