@@ -23,6 +23,8 @@ struct DALI_InitTypeDef
 	uint16_t 			dali_tx_pin;
 	uint16_t 			dali_rx_pin;
 	TIM_TypeDef*		dali_tim;
+	uint32_t			dali_rx_ch;
+	uint32_t			dali_af;
 	TIM_TypeDef*		kz_tim;
 	uint32_t 			callback_line;
 	DALI_LOGIC			logic;
@@ -42,6 +44,7 @@ class DaliController
 		void StartReceiving();
 		void StopReceiving();
 		void CheckKZ();
+		void ProcessIC();
 	
 		bool sending,receiving,delayed;
 		bool send_completed,receive_completed;

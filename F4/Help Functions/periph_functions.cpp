@@ -471,6 +471,53 @@ uint8_t CheckDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream)
 }
 //
 
+
+uint8_t GetTimIcFlag(TIM_TypeDef* tim,uint32_t ch)
+{
+	switch(ch)
+	{
+		case LL_TIM_CHANNEL_CH1:
+			return LL_TIM_IsActiveFlag_CC1(tim);
+		break;
+		
+		case LL_TIM_CHANNEL_CH2:
+			return LL_TIM_IsActiveFlag_CC2(tim);
+		break;
+		
+		case LL_TIM_CHANNEL_CH3:
+			return LL_TIM_IsActiveFlag_CC3(tim);
+		break;
+		
+		case LL_TIM_CHANNEL_CH4:
+			return LL_TIM_IsActiveFlag_CC4(tim);
+		break;
+	}
+}
+//
+
+void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch)
+{
+	switch(ch)
+	{
+		case LL_TIM_CHANNEL_CH1:
+			LL_TIM_ClearFlag_CC1(tim);
+		break;
+		
+		case LL_TIM_CHANNEL_CH2:
+			LL_TIM_ClearFlag_CC2(tim);
+		break;
+		
+		case LL_TIM_CHANNEL_CH3:
+			LL_TIM_ClearFlag_CC3(tim);
+		break;
+		
+		case LL_TIM_CHANNEL_CH4:
+			LL_TIM_ClearFlag_CC4(tim);
+		break;
+	}
+}
+//
+
 void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t stream)
 {
 	if(dma == DMA1)

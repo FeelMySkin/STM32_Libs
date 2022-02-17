@@ -44,14 +44,15 @@ void DaliController::InitGPIO()
 	gpio.Pin = dali.dali_tx_pin;
 	LL_GPIO_Init(dali.dali_tx_gpio,&gpio);
 	
-	gpio.Mode = LL_GPIO_MODE_INPUT;
+	gpio.Mode = LL_GPIO_MODE_ALTERNATE;
+	gpio.Alternate = dali.dali_af;
 	gpio.Pull = LL_GPIO_PULL_NO;
 	gpio.Pin = dali.dali_rx_pin;
 	LL_GPIO_Init(dali.dali_rx_gpio,&gpio);
 	SetHigh();
 	
 	
-	LL_EXTI_InitTypeDef exti;
+	/*LL_EXTI_InitTypeDef exti;
 	exti.LineCommand = ENABLE;
 	exti.Line_0_31 = GetExtiLine(dali.dali_rx_pin);
 	exti.Mode = LL_EXTI_MODE_IT;
@@ -59,7 +60,7 @@ void DaliController::InitGPIO()
 	SetExtiSource(dali.dali_tx_gpio,GetExtiLine(dali.dali_rx_pin));
 	LL_EXTI_Init(&exti);
 	
-	EnableExtiIRQn(GetExtiLine(dali.dali_rx_pin),0);
+	EnableExtiIRQn(GetExtiLine(dali.dali_rx_pin),0);*/
 }
 //
 
@@ -68,7 +69,7 @@ void DaliController::InitTIM()
 {
 	LL_TIM_InitTypeDef tim;
 	
-	tim.Autoreload = 1000;
+	tim.Autoreload = 3*(1000000/DALI_BAUDS[0])/2;
 	tim.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
 	tim.CounterMode = LL_TIM_COUNTERMODE_UP;
 	tim.Prescaler = SystemCoreClock/1000000-1;
@@ -76,24 +77,47 @@ void DaliController::InitTIM()
 	LL_TIM_Init(dali.dali_tim,&tim);
 	
 	LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
-	LL_TIM_EnableIT_UPDATE(dali.dali_tim);
+	//LL_TIM_EnableIT_UPDATE(dali.dali_tim);
+	
+	LL_TIM_IC_InitTypeDef ic;
+	ic.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
+	ic.ICFilter = LL_TIM_IC_FILTER_FDIV1;
+	ic.ICPolarity = LL_TIM_IC_POLARITY_BOTHEDGE;
+	ic.ICPrescaler = LL_TIM_ICPSC_DIV1;
+	LL_TIM_IC_Init(dali.dali_tim,dali.dali_rx_ch,&ic);
+	
 	
 	EnableTimIRQn(dali.dali_tim,0);
+	LL_TIM_EnableCounter(dali.dali_tim);
 
 }
 //
 
 void DaliController::StartReceiving()
 {
+	ClearIcFlag(dali.dali_tim,dali.dali_rx_ch);
+	LL_TIM_DisableIT_UPDATE(dali.dali_tim);
+	LL_TIM_SetCounter(dali.dali_tim,0);
+	LL_TIM_SetAutoReload(dali.dali_tim,3*417);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH1) LL_TIM_EnableIT_CC1(dali.dali_tim);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH2) LL_TIM_EnableIT_CC2(dali.dali_tim);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH3) LL_TIM_EnableIT_CC3(dali.dali_tim);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH4) LL_TIM_EnableIT_CC4(dali.dali_tim);
 	
-	LL_EXTI_ClearFlag_0_31(GetExtiLine(dali.dali_rx_pin));
-	LL_EXTI_EnableIT_0_31(GetExtiLine(dali.dali_rx_pin));
+	//LL_EXTI_ClearFlag_0_31(GetExtiLine(dali.dali_rx_pin));
+	//LL_EXTI_EnableIT_0_31(GetExtiLine(dali.dali_rx_pin));
 }
 //
 
 void DaliController::StopReceiving()
 {
-	LL_EXTI_DisableIT_0_31(GetExtiLine(dali.dali_rx_pin));
+	//LL_EXTI_DisableIT_0_31(GetExtiLine(dali.dali_rx_pin));
+	LL_TIM_SetCounter(dali.dali_tim,0);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH1) LL_TIM_DisableIT_CC1(dali.dali_tim);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH2) LL_TIM_DisableIT_CC2(dali.dali_tim);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH3) LL_TIM_DisableIT_CC3(dali.dali_tim);
+	if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH4) LL_TIM_DisableIT_CC4(dali.dali_tim);
+	
 }
 //
 
@@ -233,13 +257,40 @@ void DaliController::ReadData()
 }
 //
 
+void DaliController::ProcessIC()
+{
+	
+	if(receiving)
+	{
+		if(LL_TIM_GetCounter(dali.dali_tim) <=30) return;
+		recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
+		LL_TIM_DisableCounter(dali.dali_tim);
+		LL_TIM_SetCounter(dali.dali_tim,0);
+		LL_TIM_EnableCounter(dali.dali_tim);
+		recv_cnt++;
+
+	}
+	
+	if(!receiving && !sending)
+	{
+		receive_completed = false;
+		receiving = true;
+		LL_TIM_SetAutoReload(dali.dali_tim,4*DALI_BAUDS[0]);
+		LL_TIM_SetCounter(dali.dali_tim,0);
+		LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
+		LL_TIM_EnableIT_UPDATE(dali.dali_tim);
+		recv_cnt = 0;
+	}
+}
+//
+
 void DaliController::Process(bool tim_flag)
 {
 	if(sending)
 	{
 		if(send_cnt == send_len)
 		{
-			LL_TIM_DisableCounter(dali.dali_tim);
+			//LL_TIM_DisableCounter(dali.dali_tim);
 			SetHigh();
 			sending = false;
 			send_completed = true;
@@ -253,25 +304,16 @@ void DaliController::Process(bool tim_flag)
 	
 	if(receiving)
 	{
-		if(!tim_flag)
-		{
-			if(LL_TIM_GetCounter(dali.dali_tim) <=30) return;
-			recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
-			LL_TIM_DisableCounter(dali.dali_tim);
-			LL_TIM_SetCounter(dali.dali_tim,0);
-			LL_TIM_EnableCounter(dali.dali_tim);
-			recv_cnt++;
-		}
-		else
-		{
-			recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
-			LL_TIM_DisableCounter(dali.dali_tim);
-			recv_cnt++;
-			receiving = false;
-			ReadData();
-			return;
-		}
+		recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
+		LL_TIM_DisableIT_UPDATE(dali.dali_tim);
+		//LL_TIM_DisableCounter(dali.dali_tim);
+		recv_cnt++;
+		receiving = false;
+		ReadData();
+		return;
 	}
+	
+	
 	
 	if(delayed)
 	{
@@ -281,30 +323,24 @@ void DaliController::Process(bool tim_flag)
 		return;
 	}
 	
-	if(!receiving && !sending)
-	{
-		receive_completed = false;
-		receiving = true;
-		LL_TIM_SetAutoReload(dali.dali_tim,4*417);
-		LL_TIM_SetCounter(dali.dali_tim,0);
-		LL_TIM_EnableCounter(dali.dali_tim);
-		recv_cnt = 0;
-	}
 }
 //
 
 void DaliController::StartSending()
 {
+	if(receiving) return;
 	StopReceiving();
-	if(receiving)
+	/*if(receiving)
 	{
 		StartReceiving();
 		return;
-	}
+	}*/
 	send_cnt = 1;
 	sending = true;
 	LL_TIM_SetCounter(dali.dali_tim,0);
 	LL_TIM_SetAutoReload(dali.dali_tim,send_buf[0]);
+	LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
+	LL_TIM_EnableIT_UPDATE(dali.dali_tim);
 	LL_TIM_EnableCounter(dali.dali_tim);
 	LL_GPIO_TogglePin(dali.dali_tx_gpio,dali.dali_tx_pin);
 }

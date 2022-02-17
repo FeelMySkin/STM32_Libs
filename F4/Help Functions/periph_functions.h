@@ -30,6 +30,9 @@ void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t stream);
 void SetExtiSource(GPIO_TypeDef* gpio,uint32_t exti_line);
 uint32_t GetExtiLine(uint32_t pin);
 uint8_t CheckDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
+uint8_t GetTimIcFlag(TIM_TypeDef* tim,uint32_t ch);
+void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch);
+
 void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
 
 #endif
