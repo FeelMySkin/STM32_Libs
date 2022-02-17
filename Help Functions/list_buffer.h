@@ -18,9 +18,10 @@ class ListBuffer
 	uint16_t size;
 	struct Buffer
 	{
-		T buffer;
+		T holder;
 		Buffer *next;
-		~Buffer() {delete &buffer;}
+		Buffer() { next = NULL;}
+		//~Buffer() {delete &holder;}
 	}*buffer;
 	//
 	

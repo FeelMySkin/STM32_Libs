@@ -17,7 +17,7 @@ T& ListBuffer<T>::operator[](uint16_t idx)
 {
 	Buffer* s = buffer;
 	for(int i = 0;i<idx;++i)s = s->next;
-	return s->buffer;
+	return s->holder;
 }
 //
 
@@ -27,7 +27,7 @@ void ListBuffer<T>::Add(T n)
 	if(size ==0)
 	{
 		buffer = new Buffer();
-		buffer->buffer = n;
+		buffer->holder = n;
 		size++;
 		buffer->next = NULL;
 		return;
@@ -37,7 +37,7 @@ void ListBuffer<T>::Add(T n)
 	while(s->next != 0) s = s->next;
 	s->next = new Buffer();
 	s = s->next;
-	s->buffer = n;
+	s->holder = n;
 	s->next = NULL;
 	size++;
 	
