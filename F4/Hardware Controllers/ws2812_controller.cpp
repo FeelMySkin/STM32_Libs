@@ -34,9 +34,10 @@ void WS2812Controller::InitDMA()
 	dma.Channel = ws.ws_dma_channel;
 	dma.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
 	dma.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
+	dma.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
 	dma.MemBurst = LL_DMA_MBURST_SINGLE;
 	dma.MemoryOrM2MDstAddress = (uint32_t)bittime_stream;
-	dma.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+	dma.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_HALFWORD;
 	dma.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
 	dma.Mode = LL_DMA_MODE_NORMAL;
 	dma.NbData = 0;
@@ -49,6 +50,7 @@ void WS2812Controller::InitDMA()
 	dma.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
 	dma.Priority = LL_DMA_PRIORITY_HIGH;
 	LL_DMA_Init(ws.ws_dma,ws.ws_dma_stream,&dma);
+	
 	
 }
 //

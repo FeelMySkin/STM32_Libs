@@ -3,6 +3,9 @@
 
 #include "defines.h"
 
+#define I2C_DEFAULT_AWAITER 50
+#define I2C_DEFAULT_PAUSE	2
+
 struct I2CController_TypeDef
 {
 	I2C_TypeDef*	i2c;
