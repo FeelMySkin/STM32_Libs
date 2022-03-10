@@ -2,7 +2,7 @@
 
 I2CController::I2CController()
 {
-
+	
 }
 //
 
@@ -56,7 +56,7 @@ void I2CController::InitI2C()
 	i2c_ini.OwnAddrSize = LL_I2C_OWNADDRESS1_7BIT;
 	i2c_ini.DutyCycle = LL_I2C_DUTYCYCLE_16_9;
 	i2c_ini.PeripheralMode = LL_I2C_MODE_I2C;
-	i2c_ini.ClockSpeed = 100000;
+	i2c_ini.ClockSpeed = i2c.speed;
 	i2c_ini.TypeAcknowledge = LL_I2C_ACK;
 	LL_I2C_Init(i2c.i2c,&i2c_ini);
 	
@@ -203,7 +203,18 @@ I2C_RESULT I2CController::TransceiveBytes(uint8_t addr,uint8_t* s_bytes, uint8_t
 	LL_I2C_ClearFlag_ADDR(i2c.i2c);
 	if(LL_I2C_IsActiveFlag_BUSY(i2c.i2c) || LL_I2C_IsActiveFlag_BERR(i2c.i2c) || LL_I2C_IsActiveFlag_AF(i2c.i2c)) HardReset();
 	LL_I2C_GenerateStartCondition(i2c.i2c);
-	while(!LL_I2C_IsActiveFlag_SB(i2c.i2c)) asm("NOP");
+	
+	for(int i = 0;i<5;++i)
+	{	
+		if(LL_I2C_IsActiveFlag_SB(i2c.i2c)) break;
+		Await(I2C_DEFAULT_PAUSE);
+	}
+	if(!LL_I2C_IsActiveFlag_SB(i2c.i2c))
+	{
+		HardReset();
+		return I2C_TIMEOUT;
+	}
+	
 	LL_I2C_TransmitData8(i2c.i2c,addr);
 	
 	SetTimeout();

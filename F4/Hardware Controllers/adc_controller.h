@@ -29,10 +29,10 @@ struct ADC_Struct
 	ADC_TYPE 		type;
 	GPIO_TypeDef* 	gpio;
 	uint32_t		pin;
-	double			coeff;
+	float			coeff;
 	uint32_t		adc_ch;
 	uint8_t 		ch_num;
-	double			offset;
+	float			offset;
 };
 
 struct ADC_InitStruct
@@ -63,7 +63,7 @@ class ADCController
 		void AddLine(ADC_Struct);
 		void AddInnerVoltageLine();
 		void EnableDmaInterrupt(bool stat);
-		double getMeasure(uint32_t adc_channel);
+		float getMeasure(uint32_t adc_channel);
 		void ProcessAll();
 		void Process(uint32_t ch);
 		void ProcessInner();
@@ -84,9 +84,9 @@ class ADCController
 		uint32_t sampling;
 		uint8_t size,samples;
 		uint32_t *meas;
-		double *results;
+		float *results;
 		uint8_t buf_cnt;
-		double inner_voltage,inner_voltage_coeff;
+		float inner_voltage,inner_voltage_coeff;
 	
 		ADC_Flags flags;
 		ADC_Struct	*adc;

@@ -146,7 +146,7 @@ void ADCController::InitMemory()
 	meas = new uint32_t[samples*size];
 	for(int i = 0;i<samples*size;++i) meas[i] = 0;
 	
-	results = new double[size];
+	results = new float[size];
 	for(int i =0;i<size;++i) results[i] = 0;
 }
 //
@@ -303,7 +303,7 @@ void ADCController::ProcessInner()
 }
 //
 
-double ADCController::getMeasure(uint32_t adc_num)
+float ADCController::getMeasure(uint32_t adc_num)
 {
 	for(int i = 0;i<size;++i)
 	{
