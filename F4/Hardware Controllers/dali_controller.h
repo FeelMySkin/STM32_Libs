@@ -16,6 +16,12 @@ enum DALI_LOGIC
 	DALI_LOGIC_NEGATIVE
 };
 
+enum DALI_TYPE
+{
+	DALI_IC,
+	DALI_EXTI
+};
+
 struct DALI_InitTypeDef
 {
 	GPIO_TypeDef* 		dali_tx_gpio;
@@ -27,7 +33,8 @@ struct DALI_InitTypeDef
 	uint32_t			dali_af;
 	TIM_TypeDef*		kz_tim;
 	uint32_t 			callback_line;
-	DALI_LOGIC			logic;
+	DALI_LOGIC			logic:2;
+	DALI_TYPE			type:2;
 };
 
 class DaliController
