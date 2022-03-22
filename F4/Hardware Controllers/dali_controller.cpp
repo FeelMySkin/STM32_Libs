@@ -81,6 +81,7 @@ void DaliController::InitTIM()
 	
 	LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
 	 if(dali.type == DALI_EXTI) LL_TIM_EnableIT_UPDATE(dali.dali_tim);
+	EnableTimIRQn(dali.dali_tim,0);
 	
 	if(dali.type == DALI_IC)
 	{
@@ -90,10 +91,10 @@ void DaliController::InitTIM()
 		ic.ICPolarity = LL_TIM_IC_POLARITY_BOTHEDGE;
 		ic.ICPrescaler = LL_TIM_ICPSC_DIV1;
 		LL_TIM_IC_Init(dali.dali_tim,dali.dali_rx_ch,&ic);
+		LL_TIM_EnableCounter(dali.dali_tim);
 	}
 	
 	
-	EnableTimIRQn(dali.dali_tim,0);
 	LL_TIM_EnableCounter(dali.dali_tim);
 
 }
@@ -188,8 +189,8 @@ void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
 	for(int i = 0;i<n_bits+1;++i) bits[i] = (to_send>>(n_bits-i))&1;
 	send_len = 0;
 	
-	//uint16_t halfbit = (1000000/baud)/2;
-	uint16_t halfbit = 417;
+	uint16_t halfbit = (1000000/baud)/2;
+	//uint16_t halfbit = 417;
 	
 	for(int i = 0;i<n_bits+1;++i)
 	{
