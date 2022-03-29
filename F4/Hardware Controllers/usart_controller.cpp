@@ -275,3 +275,14 @@ void UsartController::ShiftTail(uint16_t shft)
 	}
 }
 //
+
+void UsartController::Reset()
+{
+	LL_GPIO_SetPinMode(usart.rx_gpio,usart.rx_pin,LL_GPIO_MODE_OUTPUT);
+	LL_GPIO_SetPinMode(usart.tx_gpio,usart.tx_pin,LL_GPIO_MODE_OUTPUT);
+	LL_GPIO_SetOutputPin(usart.tx_gpio,usart.tx_pin);
+	LL_GPIO_SetOutputPin(usart.rx_gpio,usart.rx_pin);
+	for(int i = 0;i<100000;++i) asm("NOP");
+	InitGPIO();
+}
+//

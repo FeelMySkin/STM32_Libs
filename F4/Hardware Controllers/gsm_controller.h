@@ -37,6 +37,15 @@ struct SMS
 };
 //
 
+enum GSM_MODULE_TYPE
+{
+	GSM_TYPE_SIMCOM_SIM800,
+	GSM_TYPE_SIMCOM_A7670,
+	GSM_TYPE_LYNQ_L307E, //Progress PN6280
+	GSM_TYPE_NO_TYPE
+};
+//
+
 
 class GSM_Controller
 {
@@ -44,6 +53,7 @@ class GSM_Controller
 		GSM_Controller();
 		void Init(UsartController*	usart);
 		void Send(const char *send,uint32_t len);
+		void SendToServer(uint8_t*, uint32_t len);
 		void Send(char ch);
 		void PushBuffer();
 		void PowerDown();
@@ -64,14 +74,17 @@ class GSM_Controller
 		TIME_DATE GetSyncTime();
 		TIME_DATE GetTime();
 		void SaveTime(TIME_DATE time);
+		uint32_t GetMessageLength();
 	
 		SMS sms;
 		GSM_STATUS state;
 		GSM_MODE mode;
+		GSM_MODULE_TYPE		gsm_type;
 		//Cyclic_Buffer<uint8_t,GSM_BUFFER_SIZE> gsm_buf;
 		uint8_t gsm_buf[GSM_BUFFER_SIZE];
 		uint8_t signal_level;
 		bool line_clear;
+		uint8_t mess_buffer[2048];
 		
 	private:
 		void Send();
@@ -79,10 +92,10 @@ class GSM_Controller
 		bool ReadAnswer(bool no_cr_lf=false);
 		uint8_t GetPduSymbol(const char* str);
 	
-		uint8_t to_send[500];
-		uint8_t send_buf[400];
-		char answer[512];
-		uint32_t send_len;
+		uint8_t 			to_send[500];
+		uint8_t 			send_buf[400];
+		char 				answer[512];
+		uint32_t 			send_len;
 		UsartController*	usart;
 };
 

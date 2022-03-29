@@ -24,7 +24,7 @@ struct UsartController_InitTypeDef
 	bool			use_dma_tx:1;
 	bool			use_dma_rx:1;
 	bool			use_rx_irq:1;
-	uint16_t 		buffer_size:13;
+	uint16_t 		buffer_size;
 };
 //
 
@@ -43,6 +43,7 @@ class UsartController
 		void Send(uint8_t*,uint16_t);
 		void Send(const char*);
 		void Send(uint8_t);
+		void Reset();
 		bool IsSent();
 		uint16_t GetPointer();
 		uint8_t GetChar(uint16_t ptr = 0);
