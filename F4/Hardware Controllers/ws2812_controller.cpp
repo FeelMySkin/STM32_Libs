@@ -121,7 +121,7 @@ void WS2812Controller::Colorize()
 		{
 			for(int j = 0;j<8;++j)
 			{
-				bittime_stream[24*i+j] = (colors_new[i].red>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/15; //*4/5 or /5
+				bittime_stream[24*i+j] = (colors_new[i].red>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5; //*4/5 or /5
 				bittime_stream[24*i+8+j] = (colors_new[i].green>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
 				bittime_stream[24*i+16+j] = (colors_new[i].blue>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
 			}
