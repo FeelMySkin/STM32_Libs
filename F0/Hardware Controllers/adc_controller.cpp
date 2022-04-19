@@ -86,6 +86,9 @@ void ADCController::InitLines()
 	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0 | 
 	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0);
 	
+	LL_ADC_StartCalibration(ADC1);
+	while(LL_ADC_IsCalibrationOnGoing(ADC1)) asm("NOP");
+	
 	LL_ADC_InitTypeDef adc_ini;
 	adc_ini.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
 	adc_ini.Resolution = LL_ADC_RESOLUTION_12B;
@@ -164,7 +167,7 @@ void ADCController::Process(uint32_t ch)
 		
 	for(ptr = 0;ptr<size;++ptr)
 	{
-		if(adc[ptr].adc_ch == ch)break;
+		if(adc[ptr].ch_num == ch)break;
 	}
 	
 	for(int j = 0;j < samples;++j)
