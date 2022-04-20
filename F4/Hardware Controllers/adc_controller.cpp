@@ -146,7 +146,7 @@ void ADCController::InitMemory()
 	meas = new uint32_t[samples*size];
 	for(int i = 0;i<samples*size;++i) meas[i] = 0;
 	
-	results = new float[size];
+	results = new double[size];
 	for(int i =0;i<size;++i) results[i] = 0;
 }
 //
@@ -303,7 +303,7 @@ void ADCController::ProcessInner()
 }
 //
 
-float ADCController::getMeasure(uint32_t adc_num)
+double ADCController::getMeasure(uint8_t adc_num)
 {
 	for(int i = 0;i<size;++i)
 	{
@@ -311,6 +311,17 @@ float ADCController::getMeasure(uint32_t adc_num)
 	}
 	
 	return 0xFF;
+}
+//
+
+double *ADCController::GetPointerToChannel(uint8_t ch)
+{
+	for(int i = 0;i<size;++i)
+	{
+		if(adc[i].ch_num == ch) return &results[i];
+	}
+	
+	return 0x00;
 }
 //
 
