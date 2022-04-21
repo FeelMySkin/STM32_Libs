@@ -132,7 +132,7 @@ void ADCController::InitDMA()
 	dma.PeriphOrM2MSrcAddress = (uint32_t)&ADC1->DR;
 	dma.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_WORD;
 	dma.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
-	dma.Priority = LL_DMA_PRIORITY_HIGH;
+	dma.Priority = LL_DMA_PRIORITY_MEDIUM;
 	LL_DMA_Init(init.dma,init.dma_stream,&dma);
 	
 	LL_DMA_EnableIT_TC(init.dma,init.dma_stream);
