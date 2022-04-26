@@ -63,7 +63,8 @@ class ADCController
 		void AddLine(ADC_Struct);
 		void AddInnerVoltageLine();
 		void EnableDmaInterrupt(bool stat);
-		float getMeasure(uint32_t adc_channel);
+		double getMeasure(uint8_t adc_channel);
+		double *GetPointerToChannel(uint8_t ch_num);
 		void ProcessAll();
 		void Process(uint32_t ch);
 		void ProcessInner();
@@ -84,9 +85,9 @@ class ADCController
 		uint32_t sampling;
 		uint8_t size,samples;
 		uint32_t *meas;
-		float *results;
+		double *results;
 		uint8_t buf_cnt;
-		float inner_voltage,inner_voltage_coeff;
+		double inner_voltage,inner_voltage_coeff;
 	
 		ADC_Flags flags;
 		ADC_Struct	*adc;

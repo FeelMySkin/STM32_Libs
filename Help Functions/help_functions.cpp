@@ -1,8 +1,8 @@
 #include "help_functions.h"
 
-bool CompareWildStrings(const char* wild, char* string, char wild_card)
+bool CompareWildStrings(const char* wild, const char* string, char wild_card)
 {
-	char *cp = NULL;//, *mp = NULL;
+	const char *cp = NULL;//, *mp = NULL;
 	const char *mp;
 
   while ((*string) && (*wild != wild_card)) {

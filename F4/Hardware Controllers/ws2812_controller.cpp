@@ -15,8 +15,9 @@ WS2812Controller::~WS2812Controller()
 void WS2812Controller::Init(WS_TypeDef ws)
 {
 	this->ws = ws;
-	bittime_stream = new uint16_t[ws.pixels*24+1];
-	bittime_stream[24*ws.pixels] = 0;
+	bittime_stream = new uint16_t[ws.pixels*24+2];
+	bittime_stream[0] = 0x00;
+	bittime_stream[24*ws.pixels+1] = 0x00;
 	colors_old = new Color[ws.pixels];
 	colors_new = new Color[ws.pixels];
 	colors_old[0] = Color(1,0,0);
@@ -91,6 +92,11 @@ void WS2812Controller::InitTIM()
 	LL_TIM_CC_EnableChannel(ws.ws_tim,ws.ws_tim_ch);
 	LL_TIM_EnableCounter(ws.ws_tim);
 	
+	//if(ws.ws_tim_ch == LL_TIM_CHANNEL_CH1) LL_TIM_EnableDMAReq_CC1(ws.ws_tim);
+	//else if(ws.ws_tim_ch == LL_TIM_CHANNEL_CH2) LL_TIM_EnableDMAReq_CC2(ws.ws_tim);
+	//else if(ws.ws_tim_ch == LL_TIM_CHANNEL_CH3) LL_TIM_EnableDMAReq_CC3(ws.ws_tim);
+	//else if(ws.ws_tim_ch == LL_TIM_CHANNEL_CH4) LL_TIM_EnableDMAReq_CC4(ws.ws_tim);
+	
 	LL_TIM_EnableDMAReq_UPDATE(ws.ws_tim);
 }
 //
@@ -121,14 +127,14 @@ void WS2812Controller::Colorize()
 		{
 			for(int j = 0;j<8;++j)
 			{
-				bittime_stream[24*i+j] = (colors_new[i].red>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/15; //*4/5 or /5
-				bittime_stream[24*i+8+j] = (colors_new[i].green>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
-				bittime_stream[24*i+16+j] = (colors_new[i].blue>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
+				bittime_stream[24*i+j+1] = (colors_new[i].red>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5; //*4/5 or /5
+				bittime_stream[24*i+8+j+1] = (colors_new[i].green>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
+				bittime_stream[24*i+16+j+1] = (colors_new[i].blue>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
 			}
 			colors_old[i]=colors_new[i];
 		}
 		ClearDmaTCFlag(ws.ws_dma,ws.ws_dma_stream);
-		LL_DMA_SetDataLength(ws.ws_dma,ws.ws_dma_stream,24*ws.pixels+1);
+		LL_DMA_SetDataLength(ws.ws_dma,ws.ws_dma_stream,24*ws.pixels+2);
 		LL_DMA_EnableStream(ws.ws_dma,ws.ws_dma_stream);
 		
 	}
