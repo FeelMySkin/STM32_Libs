@@ -804,7 +804,7 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 	
 	Send("AT+CIPSTATUS=?\r");
 	WaitMessage(true,1);
-	if(gsm_type == GSM_TYPE_LYNQ_L307E || GSM_TYPE_SIMCOM_SIM800)
+	if(gsm_type == GSM_TYPE_LYNQ_L307E || gsm_type == GSM_TYPE_SIMCOM_SIM800)
 	{
 		Send("AT+CIPSTART=\"TCP\",\"",19);
 		if(GetLengthToSymbol(conn_setup.server1,0) > 0) Send(conn_setup.server1,GetLengthToSymbol(conn_setup.server1,0));
