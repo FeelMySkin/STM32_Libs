@@ -42,10 +42,27 @@ void ADCController::AddInnerVoltageLine()
 	new_adc.gpio = 0;
 	new_adc.pin = 0;
 	new_adc.type = ADC_TYPE_INNER_VOLTAGE;
-	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
+	//LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
 	new_adc.offset = 0;
 	AddLine(new_adc);
 	flags.voltage = 1;
+}
+//
+
+void ADCController::AddTempSensor()
+{
+	ADC_Struct new_adc;
+	new_adc.adc_ch = LL_ADC_CHANNEL_TEMPSENSOR;
+	new_adc.ch_num = TEMP_CH;
+	new_adc.coeff = 1;
+	new_adc.gpio = 0;
+	new_adc.pin = 0;
+	new_adc.type = ADC_TYPE_INNER_TEMP;
+	//LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	
+	new_adc.offset = 0;
+	AddLine(new_adc);
+	flags.temp = 1;
 }
 //
 
@@ -72,7 +89,7 @@ void ADCController::InitGPIO()
 	for(int i = 0;i<size;++i)
 	{
 		gpio.Pin = adc[i].pin;
-		if(adc[i].type != ADC_TYPE_INNER_VOLTAGE) LL_GPIO_Init(adc[i].gpio,&gpio);
+		if(adc[i].type != ADC_TYPE_INNER_VOLTAGE && adc[i].type != ADC_TYPE_INNER_TEMP) LL_GPIO_Init(adc[i].gpio,&gpio);
 	}
 }
 //
@@ -102,7 +119,10 @@ void ADCController::InitLines()
 	for(int i = 0;i<size;++i)
 	{
 		LL_ADC_REG_SetSequencerRanks(ADC1,GetRank(i),adc[i].adc_ch);
-		LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,sampling);
+		if(adc[i].type != ADC_TYPE_INNER_TEMP) LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,sampling);
+		else if(sampling != LL_ADC_SAMPLINGTIME_3CYCLES) LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,sampling);
+		else LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,LL_ADC_SAMPLINGTIME_28CYCLES);
+		
 	}
 	
 	LL_ADC_Enable(ADC1);
@@ -237,9 +257,16 @@ void ADCController::Process(uint32_t ch)
 			break;
 		
 		case ADC_TYPE_INNER_VOLTAGE:
-			results[ptr] = (1.203*4095.)/(meas_getter);
+			results[ptr] = ((VREFINT_CAL_VREF* (*VREFINT_CAL_ADDR))/(meas_getter))/1000.0;
 			inner_voltage = results[ptr];
 			inner_voltage_coeff = inner_voltage/4095.0;
+		break;
+		
+		case ADC_TYPE_INNER_TEMP:
+			temp_sens1 = TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP;
+			temp_sens2 = (*TEMPSENSOR_CAL2_ADDR) - (*TEMPSENSOR_CAL1_ADDR);
+		
+			results[ptr] = ((int32_t)(meas_getter)-(*TEMPSENSOR_CAL1_ADDR))*(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP)/(double)((*TEMPSENSOR_CAL2_ADDR) - (*TEMPSENSOR_CAL1_ADDR)) + TEMPSENSOR_CAL1_TEMP;
 		break;
 		
 		case ADC_TYPE_RAW:
@@ -283,10 +310,14 @@ void ADCController::ProcessAll()
 				break;
 			
 			case ADC_TYPE_INNER_VOLTAGE:
-				results[i] = (1.203*4095.)/(meas_getter[i]);
+				results[i] = ((VREFINT_CAL_VREF* (*VREFINT_CAL_ADDR))/(meas_getter[i]))/1000.0;
 				inner_voltage = results[i];
 				inner_voltage_coeff = inner_voltage/4095.0;
 			break;
+			
+			case ADC_TYPE_INNER_TEMP:
+			results[i] = ((meas_getter[i])-(int32_t)*TEMPSENSOR_CAL1_ADDR)*(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP)/((int32_t)*TEMPSENSOR_CAL2_ADDR - (int32_t)*TEMPSENSOR_CAL1_ADDR)+ TEMPSENSOR_CAL1_TEMP;
+		break;
 			
 			case ADC_TYPE_RAW:
 				results[i] = (meas_getter[i]);
@@ -299,7 +330,13 @@ void ADCController::ProcessAll()
 
 void ADCController::ProcessInner()
 {
-	Process(LL_ADC_CHANNEL_VREFINT);
+	Process(V_REF_CH);
+}
+//
+
+void ADCController::ProcessTemp()
+{
+	Process(TEMP_CH);
 }
 //
 
@@ -311,6 +348,12 @@ double ADCController::getMeasure(uint8_t adc_num)
 	}
 	
 	return 0xFF;
+}
+//
+
+double ADCController::GetTemp()
+{
+	return getMeasure(TEMP_CH);
 }
 //
 

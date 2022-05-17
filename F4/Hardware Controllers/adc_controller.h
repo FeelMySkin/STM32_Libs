@@ -21,6 +21,7 @@ enum ADC_TYPE
 	ADC_TYPE_POS_RESISTANCE,
 	ADC_TYPE_NEG_RESISTANCE,
 	ADC_TYPE_INNER_VOLTAGE,
+	ADC_TYPE_INNER_TEMP,
 	ADC_TYPE_RAW
 };
 
@@ -62,12 +63,15 @@ class ADCController
 		void SetSamplingTime(uint32_t sampling);
 		void AddLine(ADC_Struct);
 		void AddInnerVoltageLine();
+		void AddTempSensor();
 		void EnableDmaInterrupt(bool stat);
 		double getMeasure(uint8_t adc_channel);
 		double *GetPointerToChannel(uint8_t ch_num);
 		void ProcessAll();
 		void Process(uint32_t ch);
 		void ProcessInner();
+		void ProcessTemp();
+		double GetTemp();
 		bool first_data_gained;
 	
 	
@@ -88,6 +92,8 @@ class ADCController
 		double *results;
 		uint8_t buf_cnt;
 		double inner_voltage,inner_voltage_coeff;
+	
+		volatile uint32_t temp_sens1, temp_sens2;
 	
 		ADC_Flags flags;
 		ADC_Struct	*adc;
