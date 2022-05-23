@@ -32,7 +32,11 @@ uint32_t GetExtiLine(uint32_t pin);
 uint8_t CheckDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
 uint8_t GetTimIcFlag(TIM_TypeDef* tim,uint32_t ch);
 void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch);
+void EnableTimCCIT(TIM_TypeDef* tim,uint32_t channel);
 
 void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
+
+
+
 
 #endif

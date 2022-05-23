@@ -38,6 +38,7 @@ struct ADC_Struct
 
 struct ADC_InitStruct
 {
+	ADC_TypeDef*	adc;
 	DMA_TypeDef* 	dma;
 	uint32_t		dma_stream;
 	uint32_t		dma_channel;

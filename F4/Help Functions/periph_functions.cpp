@@ -518,6 +518,15 @@ void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch)
 }
 //
 
+void EnableTimCCIT(TIM_TypeDef* tim,uint32_t channel)
+{
+	if(channel == LL_TIM_CHANNEL_CH1) LL_TIM_EnableIT_CC1(tim);
+	else if(channel == LL_TIM_CHANNEL_CH2) LL_TIM_EnableIT_CC2(tim);
+	else if(channel == LL_TIM_CHANNEL_CH3) LL_TIM_EnableIT_CC3(tim);
+	else if(channel == LL_TIM_CHANNEL_CH4) LL_TIM_EnableIT_CC4(tim);
+}
+//
+
 void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t stream)
 {
 	if(dma == DMA1)

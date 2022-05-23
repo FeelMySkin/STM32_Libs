@@ -42,7 +42,7 @@ void ADCController::AddInnerVoltageLine()
 	new_adc.gpio = 0;
 	new_adc.pin = 0;
 	new_adc.type = ADC_TYPE_INNER_VOLTAGE;
-	//LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
+	//LL_ADC_SetCommonPathInternalCh(init.adc_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
 	new_adc.offset = 0;
 	AddLine(new_adc);
 	flags.voltage = 1;
@@ -58,7 +58,7 @@ void ADCController::AddTempSensor()
 	new_adc.gpio = 0;
 	new_adc.pin = 0;
 	new_adc.type = ADC_TYPE_INNER_TEMP;
-	//LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	//LL_ADC_SetCommonPathInternalCh(init.adc_COMMON,LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 	
 	new_adc.offset = 0;
 	AddLine(new_adc);
@@ -76,7 +76,7 @@ void ADCController::Init(ADC_InitStruct in_str, uint8_t samples)
 	InitDMA();
 	InitLines();
 	
-	LL_ADC_REG_StartConversionSWStart(ADC1);
+	LL_ADC_REG_StartConversionSWStart(init.adc);
 }
 //
 
@@ -97,7 +97,13 @@ void ADCController::InitGPIO()
 void ADCController::InitLines()
 {
 	
-	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,
+	LL_ADC_SetCommonPathInternalCh(
+	#if  defined(ADC1_COMMON)
+		init.adc_COMMON
+	#elif defined(ADC123_COMMON)
+		ADC123_COMMON
+	#endif
+	,
 	flags.voltage?LL_ADC_PATH_INTERNAL_VREFINT:0 | 
 	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0 | 
 	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0);
@@ -106,7 +112,7 @@ void ADCController::InitLines()
 	adc_ini.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
 	adc_ini.Resolution = LL_ADC_RESOLUTION_12B;
 	adc_ini.SequencersScanMode = LL_ADC_SEQ_SCAN_ENABLE;
-	LL_ADC_Init(ADC1,&adc_ini);
+	LL_ADC_Init(init.adc,&adc_ini);
 	
 	LL_ADC_REG_InitTypeDef reg;
 	reg.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
@@ -114,18 +120,18 @@ void ADCController::InitLines()
 	reg.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
 	reg.SequencerLength = RanksCounter();
 	reg.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-	LL_ADC_REG_Init(ADC1,&reg);
+	LL_ADC_REG_Init(init.adc,&reg);
 	
 	for(int i = 0;i<size;++i)
 	{
-		LL_ADC_REG_SetSequencerRanks(ADC1,GetRank(i),adc[i].adc_ch);
-		if(adc[i].type != ADC_TYPE_INNER_TEMP) LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,sampling);
-		else if(sampling != LL_ADC_SAMPLINGTIME_3CYCLES) LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,sampling);
-		else LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,LL_ADC_SAMPLINGTIME_28CYCLES);
+		LL_ADC_REG_SetSequencerRanks(init.adc,GetRank(i),adc[i].adc_ch);
+		if(adc[i].type != ADC_TYPE_INNER_TEMP) LL_ADC_SetChannelSamplingTime(init.adc,adc[i].adc_ch,sampling);
+		else if(sampling != LL_ADC_SAMPLINGTIME_3CYCLES) LL_ADC_SetChannelSamplingTime(init.adc,adc[i].adc_ch,sampling);
+		else LL_ADC_SetChannelSamplingTime(init.adc,adc[i].adc_ch,LL_ADC_SAMPLINGTIME_28CYCLES);
 		
 	}
 	
-	LL_ADC_Enable(ADC1);
+	LL_ADC_Enable(init.adc);
 }
 //
 
@@ -149,7 +155,7 @@ void ADCController::InitDMA()
 	dma.Mode = LL_DMA_MODE_CIRCULAR;
 	dma.NbData = size*samples; //ADC_CHANNELS;
 	dma.PeriphBurst = LL_DMA_PBURST_SINGLE;
-	dma.PeriphOrM2MSrcAddress = (uint32_t)&ADC1->DR;
+	dma.PeriphOrM2MSrcAddress = (uint32_t)&init.adc->DR;
 	dma.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_WORD;
 	dma.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
 	dma.Priority = LL_DMA_PRIORITY_MEDIUM;
