@@ -217,6 +217,13 @@ void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority)
 		NVIC_EnableIRQ(TIM5_IRQn);
 		NVIC_SetPriority(TIM5_IRQn,priority);
 	}
+	#ifdef TIM6
+	else if(tim == TIM6)
+	{
+		NVIC_EnableIRQ(TIM6_DAC_IRQn);
+		NVIC_SetPriority(TIM6_DAC_IRQn,priority);
+	}
+	#endif
 	#ifdef TIM8
 	else if(tim == TIM8)
 	{
