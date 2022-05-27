@@ -241,7 +241,80 @@ void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority)
 		NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
 		NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn,priority);
 	}
+	#ifdef TIM13
+	else if(tim == TIM13)
+	{
+		NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
+		NVIC_SetPriority(TIM8_UP_TIM13_IRQn,priority);
+	}
+	#endif
 
+}
+//
+
+void EnableTimCCIRQn(TIM_TypeDef* tim,uint8_t priority)
+{
+	if(tim == TIM1)
+	{
+		NVIC_EnableIRQ(TIM1_CC_IRQn);
+		NVIC_SetPriority(TIM1_CC_IRQn,priority);
+	}
+	else if(tim == TIM2)
+	{
+		NVIC_EnableIRQ(TIM2_IRQn);
+		NVIC_SetPriority(TIM2_IRQn,priority);
+	}
+	else if(tim == TIM3)
+	{
+		NVIC_EnableIRQ(TIM3_IRQn);
+		NVIC_SetPriority(TIM3_IRQn,priority);
+	}
+	else if(tim == TIM4)
+	{
+		NVIC_EnableIRQ(TIM4_IRQn);
+		NVIC_SetPriority(TIM4_IRQn,priority);
+	}
+	else if(tim == TIM5)
+	{
+		NVIC_EnableIRQ(TIM5_IRQn);
+		NVIC_SetPriority(TIM5_IRQn,priority);
+	}
+	#ifdef TIM6
+	else if(tim == TIM6)
+	{
+		NVIC_EnableIRQ(TIM6_DAC_IRQn);
+		NVIC_SetPriority(TIM6_DAC_IRQn,priority);
+	}
+	#endif
+	#ifdef TIM8
+	else if(tim == TIM8)
+	{
+		NVIC_EnableIRQ(TIM8_CC_IRQn);
+		NVIC_SetPriority(TIM8_CC_IRQn,priority);
+	}
+	#endif
+	else if(tim == TIM9)
+	{
+		NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
+		NVIC_SetPriority(TIM1_BRK_TIM9_IRQn,priority);
+	}
+	else if(tim == TIM10)
+	{
+		NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
+		NVIC_SetPriority(TIM1_UP_TIM10_IRQn,priority);
+	}
+	else if(tim == TIM11)
+	{
+		NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
+	}
+	#ifdef TIM13
+	else if(tim == TIM13)
+	{
+		NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
+		NVIC_SetPriority(TIM8_UP_TIM13_IRQn,priority);
+	}
+	#endif
+		
 }
 //
 

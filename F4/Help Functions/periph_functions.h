@@ -21,6 +21,7 @@
 
 void EnableExtiIRQn(uint32_t exti_line,uint8_t priority);
 void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority);
+void EnableTimCCIRQn(TIM_TypeDef* tim,uint8_t priority);
 void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t stream,uint8_t priority);
 void EnableUartIRQn(USART_TypeDef* uart, uint8_t priority);
 
