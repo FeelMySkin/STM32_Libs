@@ -34,6 +34,10 @@ uint8_t CheckDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
 uint8_t GetTimIcFlag(TIM_TypeDef* tim,uint32_t ch);
 void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch);
 void EnableTimCCIT(TIM_TypeDef* tim,uint32_t channel);
+void DisableTimCCIT(TIM_TypeDef* tim,uint32_t channel);
+
+void SetTimCC(TIM_TypeDef* tim, uint32_t ch, uint32_t duty);
+uint32_t GetTimCC(TIM_TypeDef* tim, uint32_t ch);
 
 void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
 

@@ -87,7 +87,7 @@ void UsartController::InitDMA(bool tx, bool rx)
 		dma.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;	
 		dma.MemoryOrM2MDstAddress = (uint32_t)send_buffer;
 		dma.NbData = 0;
-		dma.Channel = usart.dma_channel;
+		dma.Channel = usart.dma_tx_channel;
 		dma.Priority = LL_DMA_PRIORITY_MEDIUM;
 		LL_DMA_Init(usart.dma,usart.dma_tx_stream,&dma);
 		//LL_DMA_EnableStream(usart.dma,usart.dma_tx_stream);
@@ -112,7 +112,7 @@ void UsartController::InitDMA(bool tx, bool rx)
 		#else
 		dma.MemoryOrM2MDstAddress = (uint32_t)received;
 		#endif
-		dma.Channel = usart.dma_channel;
+		dma.Channel = usart.dma_rx_channel;
 		dma.Priority = LL_DMA_PRIORITY_MEDIUM;
 		dma.NbData = usart.buffer_size;
 		LL_DMA_Init(usart.dma,usart.dma_rx_stream,&dma);
