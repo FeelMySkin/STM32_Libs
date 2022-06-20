@@ -36,6 +36,7 @@ class UsartController
 	public:
 		void Init(UsartController_InitTypeDef);
 		void SetBaud(uint32_t baud);
+		uint32_t GetBaud() {return usart.baud;}
 		void SetBufferSize(uint16_t);
 		void SetBufferPtr(uint8_t* ptr);
 		void ClearBuffer();
