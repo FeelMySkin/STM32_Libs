@@ -699,7 +699,7 @@ uint32_t GSM_Controller::GetMessageLength()
 	
 	return r_len;
 	
-	for(int i = r_len-1;i>=0;--i)
+	/*for(int i = r_len-1;i>=0;--i)
 	{
 		mess_buffer[i] = usart->Pull();
 	}
@@ -717,7 +717,7 @@ uint32_t GSM_Controller::GetMessageLength()
 			return r_len;
 		}
 	}
-	return 0;
+	return 0;*/
 }
 //
 

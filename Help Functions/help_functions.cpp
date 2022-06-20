@@ -36,15 +36,17 @@ bool CompareWildStrings(const char* wild, const char* string, char wild_card)
 }
 //
 
-bool ComparePartStrings(const char* str1, const char* str2)
+bool ComparePartStrings(const char* str1, const char* str2, uint16_t length)
 {
-	while(*str1 != 0 && *str2 != 0)
+	
+	while(*str1 != 0 && *str2 != 0 && length !=0 )
 	{
 		if(*str1 != *str2) return false;
 		str2++;
 		str1++;
+		length--;
 	}
-	if(*str1 == 0 && *str2 !=0) return false;
+	//if(*str1 == 0 && *str2 !=0) return false;
 	return true;
 }
 //
