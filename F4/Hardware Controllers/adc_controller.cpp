@@ -26,7 +26,7 @@ void ADCController::AddLine(ADC_Struct str)
 	{
 		adc[i] = last_buf[i];
 	}
-	delete [] last_buf;
+	if(size != 0) delete [] last_buf;
 	adc[size] = str;
 	adc[size].adc_ch = channel_mapping[adc[size].ch_num];
 	size++;
@@ -99,7 +99,7 @@ void ADCController::InitLines()
 	
 	LL_ADC_SetCommonPathInternalCh(
 	#if  defined(ADC1_COMMON)
-		init.adc_COMMON
+		ADC1_COMMON
 	#elif defined(ADC123_COMMON)
 		ADC123_COMMON
 	#endif
@@ -107,6 +107,15 @@ void ADCController::InitLines()
 	flags.voltage?LL_ADC_PATH_INTERNAL_VREFINT:0 | 
 	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0 | 
 	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0);
+	
+	LL_ADC_SetCommonClock(
+	#if  defined(ADC1_COMMON)
+		ADC1_COMMON
+	#elif defined(ADC123_COMMON)
+		ADC123_COMMON
+	#endif
+	,
+	LL_ADC_CLOCK_SYNC_PCLK_DIV2);
 	
 	LL_ADC_InitTypeDef adc_ini;
 	adc_ini.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
