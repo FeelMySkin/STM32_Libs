@@ -37,17 +37,20 @@ void DaliController::InitGPIO()
 {
 	LL_GPIO_InitTypeDef gpio;
 	gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-	gpio.Pull = LL_GPIO_PULL_NO;
+	gpio.Pull = LL_GPIO_PULL_UP;
 	gpio.Speed = LL_GPIO_SPEED_FREQ_HIGH;
 	
 	gpio.Mode = LL_GPIO_MODE_OUTPUT;
 	gpio.Pin = dali.dali_tx_pin;
 	LL_GPIO_Init(dali.dali_tx_gpio,&gpio);
 	
-	if(dali.type == DALI_IC) gpio.Mode = LL_GPIO_MODE_ALTERNATE;
+	if(dali.type == DALI_IC)
+	{
+		gpio.Alternate = dali.dali_af;
+		gpio.Mode = LL_GPIO_MODE_ALTERNATE;
+	}
 	else gpio.Mode = LL_GPIO_MODE_INPUT;
-	gpio.Alternate = dali.dali_af;
-	gpio.Pull = LL_GPIO_PULL_NO;
+	//gpio.Pull = LL_GPIO_PULL_NO;
 	gpio.Pin = dali.dali_rx_pin;
 	LL_GPIO_Init(dali.dali_rx_gpio,&gpio);
 	SetHigh();
@@ -81,6 +84,8 @@ void DaliController::InitTIM()
 	
 	LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
 	 if(dali.type == DALI_EXTI) LL_TIM_EnableIT_UPDATE(dali.dali_tim);
+	
+	
 	EnableTimIRQn(dali.dali_tim,0);
 	
 	if(dali.type == DALI_IC)
@@ -95,7 +100,6 @@ void DaliController::InitTIM()
 	}
 	
 	
-	LL_TIM_EnableCounter(dali.dali_tim);
 
 }
 //
@@ -124,7 +128,7 @@ void DaliController::StopReceiving()
 {
 	if(dali.type == DALI_IC)
 	{
-	LL_TIM_SetCounter(dali.dali_tim,0);
+		LL_TIM_SetCounter(dali.dali_tim,0);
 		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH1) LL_TIM_DisableIT_CC1(dali.dali_tim);
 		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH2) LL_TIM_DisableIT_CC2(dali.dali_tim);
 		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH3) LL_TIM_DisableIT_CC3(dali.dali_tim);

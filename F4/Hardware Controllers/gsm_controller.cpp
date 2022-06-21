@@ -424,7 +424,7 @@ bool GSM_Controller::SetMode(GSM_MODE new_mode)
 		Send("ATO\r",5);
 		osDelay(100);
 		ReadAnswer();
-		if(ComparePartStrings(answer,"ERROR"))
+		if(ComparePartStrings(answer,"ERROR") || ComparePartStrings(answer,"NO CARRIER"))
 		{
 			if(state == GSM_CONNECTED) state = GSM_NETWORK_OK;
 			return false;
@@ -455,6 +455,7 @@ void GSM_Controller::Reset()
 }
 //
 
+/*Just get the answer from AT command (to know module is onLine)*/
 bool GSM_Controller::CheckModem()
 {
 	Send("AT\r\n",4);
@@ -472,6 +473,7 @@ bool GSM_Controller::CheckModem()
 }
 //
 
+/*Read Answer from USART receive. no_cr_lf - if not need another CR LF before read. Read to last CR LF*/
 bool GSM_Controller::ReadAnswer(bool no_cr_lf)
 {
 	if(!WaitMessage(false,100)) return false;
@@ -609,14 +611,14 @@ void GSM_Controller::SetupModem()
 }
 //
 
-/*Check for A7670. Check SimCard Inserted*/
+/*Check SimCard Inserted. All modules OK*/
 bool GSM_Controller::CheckSim()
 {
 	WaitMessage(true,1);
 	if(gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CSMINS?\r",11);
 	else if(gsm_type == GSM_TYPE_SIMCOM_A7670) Send("AT+CICCID\r",11);
 	else if(gsm_type == GSM_TYPE_LYNQ_L307E) Send("AT+ESIMS?\r",11);
-	osDelay(100);
+	osDelay(200);
 	if(!ReadAnswer())
 	{	
 		WaitMessage(true,1);
@@ -641,11 +643,8 @@ bool GSM_Controller::CheckSim()
 	}
 	else if (gsm_type == GSM_TYPE_SIMCOM_A7670 && ComparePartStrings(answer,"+ICCID:"))
 	{
-		if(answer[8] == '1')
-		{	
-			if(state == GSM_NO_SIM) state = GSM_NO_NETWORK;
-			return true;
-		}
+		if(state == GSM_NO_SIM) state = GSM_NO_NETWORK;
+		return true;
 		
 	}
 	
@@ -660,6 +659,7 @@ bool GSM_Controller::CheckSim()
 }
 //
 
+/*Just wait to return message. clear - reset tail. timeout - wait time in 100ms*/
 bool GSM_Controller::WaitMessage(bool clear,uint32_t timeout)
 {
 	uint16_t buf_len = 0;
@@ -676,6 +676,7 @@ bool GSM_Controller::WaitMessage(bool clear,uint32_t timeout)
 }
 //
 
+/*Only foe LYNQ (Progress) Module. Get message length to parse from network.*/
 uint32_t GSM_Controller::GetMessageLength()
 {
 	uint32_t r_len = 0;
@@ -698,7 +699,7 @@ uint32_t GSM_Controller::GetMessageLength()
 	
 	return r_len;
 	
-	for(int i = r_len-1;i>=0;--i)
+	/*for(int i = r_len-1;i>=0;--i)
 	{
 		mess_buffer[i] = usart->Pull();
 	}
@@ -716,14 +717,15 @@ uint32_t GSM_Controller::GetMessageLength()
 			return r_len;
 		}
 	}
-	return 0;
+	return 0;*/
 }
 //
 
-//Not A7670. Connect to Server
+//Connect to Server. All OK
 void GSM_Controller::ConnectToServer(Connection conn_setup)
 {	
 	WaitMessage(true,1);
+	/*Configure Access point*/
 	if(gsm_type == GSM_TYPE_SIMCOM_SIM800)
 	{
 		Send("AT+CIPCSGP=1,\"",14);
@@ -761,15 +763,32 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 		Send("AT+CGDCONT=1,\"IP\",\"");
 		if(GetLengthToSymbol(conn_setup.access_point,0) > 0) Send(conn_setup.access_point,GetLengthToSymbol(conn_setup.access_point,0));
 		Send("\"\r",2);
+		Send("AT+CGAUTH=1,");
+		if(strlen(conn_setup.login) != 0 && strlen(conn_setup.pass) != 0)
+		{
+			Send("1,\"");
+			Send(conn_setup.pass,GetLengthToSymbol(conn_setup.pass,0));
+			Send("\",\"",3);
+			Send(conn_setup.login,GetLengthToSymbol(conn_setup.login,0));
+			Send("\"\r",2);
+		}
+		else if( strlen(conn_setup.pass) != 0)
+		{
+			Send("2,");Send(conn_setup.pass,GetLengthToSymbol(conn_setup.pass,0));
+			Send("\",\r");
+		}
+		else Send("0\r");
 	}
 	osDelay(200);
 	if(!ReadAnswer()) return;
 	
 	osDelay(100);
+	/*Enable transparent mode.*/
 	if(gsm_type == GSM_TYPE_SIMCOM_A7670 || gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CIPMODE=1\r",13);
 	
 	osDelay(100);
-	if(gsm_type == GSM_TYPE_SIMCOM_A7670 || gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CIPCCFG=3,2,100,1,0,50,20\r",29);
+	/*Configure transparent mode.*/
+	if(/*gsm_type == GSM_TYPE_SIMCOM_A7670 || */gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CIPCCFG=3,2,100,1,0,50,20\r",29);
 	osDelay(100);
 	Send("AT+CGATT=1\r",11);
 	osDelay(100);
@@ -802,11 +821,21 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 	}
 	//uint16_t curr_head = head_ptr;
 	
-	Send("AT+CIPSTATUS=?\r");
+	/*Start session*/
 	WaitMessage(true,1);
-	if(gsm_type == GSM_TYPE_LYNQ_L307E || GSM_TYPE_SIMCOM_SIM800)
+	if(gsm_type == GSM_TYPE_LYNQ_L307E || gsm_type == GSM_TYPE_SIMCOM_SIM800)
 	{
 		Send("AT+CIPSTART=\"TCP\",\"",19);
+		if(GetLengthToSymbol(conn_setup.server1,0) > 0) Send(conn_setup.server1,GetLengthToSymbol(conn_setup.server1,0));
+		Send("\",\"",3);
+		if(GetLengthToSymbol(conn_setup.port1,0) > 0) Send(conn_setup.port1,GetLengthToSymbol(conn_setup.port1,0));
+		Send("\"\r",2);
+		osDelay(200);
+	}
+	else if (gsm_type == GSM_TYPE_SIMCOM_A7670)
+	{
+		Send("AT+NETOPEN\r");
+		Send("AT+CIPOPEN=0,\"TCP\",\"");
 		if(GetLengthToSymbol(conn_setup.server1,0) > 0) Send(conn_setup.server1,GetLengthToSymbol(conn_setup.server1,0));
 		Send("\",\"",3);
 		if(GetLengthToSymbol(conn_setup.port1,0) > 0) Send(conn_setup.port1,GetLengthToSymbol(conn_setup.port1,0));

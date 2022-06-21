@@ -217,6 +217,13 @@ void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority)
 		NVIC_EnableIRQ(TIM5_IRQn);
 		NVIC_SetPriority(TIM5_IRQn,priority);
 	}
+	#ifdef TIM6
+	else if(tim == TIM6)
+	{
+		NVIC_EnableIRQ(TIM6_DAC_IRQn);
+		NVIC_SetPriority(TIM6_DAC_IRQn,priority);
+	}
+	#endif
 	#ifdef TIM8
 	else if(tim == TIM8)
 	{
@@ -234,7 +241,80 @@ void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority)
 		NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
 		NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn,priority);
 	}
+	#ifdef TIM13
+	else if(tim == TIM13)
+	{
+		NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
+		NVIC_SetPriority(TIM8_UP_TIM13_IRQn,priority);
+	}
+	#endif
 
+}
+//
+
+void EnableTimCCIRQn(TIM_TypeDef* tim,uint8_t priority)
+{
+	if(tim == TIM1)
+	{
+		NVIC_EnableIRQ(TIM1_CC_IRQn);
+		NVIC_SetPriority(TIM1_CC_IRQn,priority);
+	}
+	else if(tim == TIM2)
+	{
+		NVIC_EnableIRQ(TIM2_IRQn);
+		NVIC_SetPriority(TIM2_IRQn,priority);
+	}
+	else if(tim == TIM3)
+	{
+		NVIC_EnableIRQ(TIM3_IRQn);
+		NVIC_SetPriority(TIM3_IRQn,priority);
+	}
+	else if(tim == TIM4)
+	{
+		NVIC_EnableIRQ(TIM4_IRQn);
+		NVIC_SetPriority(TIM4_IRQn,priority);
+	}
+	else if(tim == TIM5)
+	{
+		NVIC_EnableIRQ(TIM5_IRQn);
+		NVIC_SetPriority(TIM5_IRQn,priority);
+	}
+	#ifdef TIM6
+	else if(tim == TIM6)
+	{
+		NVIC_EnableIRQ(TIM6_DAC_IRQn);
+		NVIC_SetPriority(TIM6_DAC_IRQn,priority);
+	}
+	#endif
+	#ifdef TIM8
+	else if(tim == TIM8)
+	{
+		NVIC_EnableIRQ(TIM8_CC_IRQn);
+		NVIC_SetPriority(TIM8_CC_IRQn,priority);
+	}
+	#endif
+	else if(tim == TIM9)
+	{
+		NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
+		NVIC_SetPriority(TIM1_BRK_TIM9_IRQn,priority);
+	}
+	else if(tim == TIM10)
+	{
+		NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
+		NVIC_SetPriority(TIM1_UP_TIM10_IRQn,priority);
+	}
+	else if(tim == TIM11)
+	{
+		NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
+	}
+	#ifdef TIM13
+	else if(tim == TIM13)
+	{
+		NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
+		NVIC_SetPriority(TIM8_UP_TIM13_IRQn,priority);
+	}
+	#endif
+		
 }
 //
 
@@ -478,19 +558,18 @@ uint8_t GetTimIcFlag(TIM_TypeDef* tim,uint32_t ch)
 	{
 		case LL_TIM_CHANNEL_CH1:
 			return LL_TIM_IsActiveFlag_CC1(tim);
-		break;
 		
 		case LL_TIM_CHANNEL_CH2:
 			return LL_TIM_IsActiveFlag_CC2(tim);
-		break;
 		
 		case LL_TIM_CHANNEL_CH3:
 			return LL_TIM_IsActiveFlag_CC3(tim);
-		break;
 		
 		case LL_TIM_CHANNEL_CH4:
 			return LL_TIM_IsActiveFlag_CC4(tim);
-		break;
+		
+		default:
+			return 0;
 	}
 }
 //
@@ -515,6 +594,24 @@ void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch)
 			LL_TIM_ClearFlag_CC4(tim);
 		break;
 	}
+}
+//
+
+void EnableTimCCIT(TIM_TypeDef* tim,uint32_t channel)
+{
+	if(channel == LL_TIM_CHANNEL_CH1) LL_TIM_EnableIT_CC1(tim);
+	else if(channel == LL_TIM_CHANNEL_CH2) LL_TIM_EnableIT_CC2(tim);
+	else if(channel == LL_TIM_CHANNEL_CH3) LL_TIM_EnableIT_CC3(tim);
+	else if(channel == LL_TIM_CHANNEL_CH4) LL_TIM_EnableIT_CC4(tim);
+}
+//
+
+void DisableTimCCIT(TIM_TypeDef* tim,uint32_t channel)
+{
+	if(channel == LL_TIM_CHANNEL_CH1) LL_TIM_DisableIT_CC1(tim);
+	else if(channel == LL_TIM_CHANNEL_CH2) LL_TIM_DisableIT_CC2(tim);
+	else if(channel == LL_TIM_CHANNEL_CH3) LL_TIM_DisableIT_CC3(tim);
+	else if(channel == LL_TIM_CHANNEL_CH4) LL_TIM_DisableIT_CC4(tim);
 }
 //
 
@@ -592,5 +689,24 @@ void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t stream)
 			NVIC_DisableIRQ(DMA2_Stream7_IRQn);
 		}
 	}
+}
+//
+
+void SetTimCC(TIM_TypeDef* tim, uint32_t ch, uint32_t duty)
+{
+	if(ch == LL_TIM_CHANNEL_CH1) LL_TIM_OC_SetCompareCH1(tim,duty);
+    if(ch == LL_TIM_CHANNEL_CH2) LL_TIM_OC_SetCompareCH2(tim,duty*2);
+    if(ch == LL_TIM_CHANNEL_CH3) LL_TIM_OC_SetCompareCH3(tim,duty*2);
+    if(ch == LL_TIM_CHANNEL_CH4) LL_TIM_OC_SetCompareCH4(tim,duty*2);
+}
+//
+
+uint32_t GetTimCC(TIM_TypeDef* tim, uint32_t ch)
+{
+	if(ch == LL_TIM_CHANNEL_CH1) return LL_TIM_OC_GetCompareCH1(tim);
+    if(ch == LL_TIM_CHANNEL_CH2) return LL_TIM_OC_GetCompareCH2(tim);
+    if(ch == LL_TIM_CHANNEL_CH3) return LL_TIM_OC_GetCompareCH3(tim);
+    if(ch == LL_TIM_CHANNEL_CH4) return LL_TIM_OC_GetCompareCH4(tim);
+	return 0;
 }
 //

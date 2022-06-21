@@ -21,6 +21,7 @@
 
 void EnableExtiIRQn(uint32_t exti_line,uint8_t priority);
 void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority);
+void EnableTimCCIRQn(TIM_TypeDef* tim,uint8_t priority);
 void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t stream,uint8_t priority);
 void EnableUartIRQn(USART_TypeDef* uart, uint8_t priority);
 
@@ -32,7 +33,15 @@ uint32_t GetExtiLine(uint32_t pin);
 uint8_t CheckDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
 uint8_t GetTimIcFlag(TIM_TypeDef* tim,uint32_t ch);
 void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch);
+void EnableTimCCIT(TIM_TypeDef* tim,uint32_t channel);
+void DisableTimCCIT(TIM_TypeDef* tim,uint32_t channel);
+
+void SetTimCC(TIM_TypeDef* tim, uint32_t ch, uint32_t duty);
+uint32_t GetTimCC(TIM_TypeDef* tim, uint32_t ch);
 
 void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
+
+
+
 
 #endif
