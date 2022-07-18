@@ -66,13 +66,14 @@ class ADCController
 		void AddInnerVoltageLine();
 		void AddTempSensor();
 		void EnableDmaInterrupt(bool stat);
-		double getMeasure(uint8_t adc_channel);
-		double *GetPointerToChannel(uint8_t ch_num);
+		float getMeasure(uint8_t adc_channel);
+		float *GetPointerToChannel(uint8_t ch_num);
+		uint32_t *GetPointerToMeas(uint8_t ch_num);
 		void ProcessAll();
 		void Process(uint32_t ch);
 		void ProcessInner();
 		void ProcessTemp();
-		double GetTemp();
+		float GetTemp();
 		bool first_data_gained;
 	
 	
@@ -90,9 +91,10 @@ class ADCController
 		uint32_t sampling;
 		uint8_t size,samples;
 		uint32_t *meas;
-		double *results;
+		uint32_t *meas_getter;
+		float *results;
 		uint8_t buf_cnt;
-		double inner_voltage,inner_voltage_coeff;
+		float inner_voltage,inner_voltage_coeff;
 	
 		volatile uint32_t temp_sens1, temp_sens2;
 	
