@@ -18,6 +18,7 @@
 #include "stm32f4xx_ll_bus.h"
 #include "stm32f4xx_ll_pwr.h"
 #include "stm32f4xx_ll_iwdg.h"
+#include "stm32f4xx_ll_crc.h"
 
 void EnableExtiIRQn(uint32_t exti_line,uint8_t priority);
 void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority);
