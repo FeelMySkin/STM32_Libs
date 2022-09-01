@@ -16,7 +16,7 @@ void GPS_Controller::Init(UsartController*	usart)
 	//InitGPIO();
 	//InitUART();
 	char gtk[18] = "$PMTK869,2,1*36\r\n";
-	usart->Send(gtk);
+//	usart->Send(gtk);
 	while(!usart->IsSent())
 	{
 		osDelay(5);
@@ -42,8 +42,9 @@ void GPS_Controller::ProcessRMC()
 	pointer = 0;
 	rmc.signal_level = 0;
 	
-	if(CompareWildStrings("G?RMC,#*??",rmc_buffer,'#') != 0)
+	if(CompareWildStrings("??RMC,#*??",rmc_buffer,'#') != 0)
 	{
+		bad_baud_tim = 0;
 		for(int i = 0;i<buf_ptr-3;++i)
 		{
 			summ^= rmc_buffer[i];
@@ -102,6 +103,16 @@ void GPS_Controller::ProcessRMC()
 			rmc.signal_level = 31;
 		}
 	}
+	/*else
+	{
+		bad_baud_tim++;
+		if(bad_baud_tim>=100)
+		{
+			if(usart->GetBaud() == 9600) usart->SetBaud(115200);
+			else usart->SetBaud(9600);
+			bad_baud_tim = 0;
+		}
+	}*/
 
 }
 //
@@ -204,7 +215,7 @@ void GPS_Controller::Process()
 					if(ptr == 12) break;
 					log_buf[ptr] = 0;
 				}
-				if(CompareWildStrings("G?RMC",log_buf)!=0)
+				if(CompareWildStrings("??RMC",log_buf)!=0)
 				{
 					for(int i = 0;i<ptr;++i)
 					{
@@ -238,6 +249,16 @@ void GPS_Controller::Process()
 					completed = true;
 					break;
 				}
+			}
+		}
+		else
+		{
+			bad_baud_tim++;
+			if(bad_baud_tim>=100)
+			{
+				if(usart->GetBaud() == 9600) usart->SetBaud(115200);
+				else usart->SetBaud(9600);
+				bad_baud_tim = 0;
 			}
 		}
 		//

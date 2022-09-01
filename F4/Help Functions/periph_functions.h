@@ -29,6 +29,7 @@
 #include "stm32f4xx_ll_bus.h"
 #include "stm32f4xx_ll_pwr.h"
 #include "stm32f4xx_ll_iwdg.h"
+#include "stm32f4xx_ll_crc.h"
 
 
 /** IRQ Enablers Zone (NVIC_EnableIRQ) */
@@ -137,6 +138,11 @@ uint8_t GetTimIcFlag(TIM_TypeDef* tim,uint32_t ch);
  * @param ch set LL_TIM_CHANNEL_CH*
  */
 void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch);
+void EnableTimCCIT(TIM_TypeDef* tim,uint32_t channel);
+void DisableTimCCIT(TIM_TypeDef* tim,uint32_t channel);
+
+void SetTimCC(TIM_TypeDef* tim, uint32_t ch, uint32_t duty);
+uint32_t GetTimCC(TIM_TypeDef* tim, uint32_t ch);
 
 /**
  * @brief Clears DMA* Transfer COmplete(TC) Flag on stream
@@ -145,5 +151,8 @@ void ClearIcFlag(TIM_TypeDef* tim,uint32_t ch);
  * @param dma_stream set LL_DMA_STREAM_*
  */
 void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
+
+
+
 
 #endif

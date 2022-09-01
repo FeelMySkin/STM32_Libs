@@ -37,7 +37,7 @@ void DaliController::InitGPIO()
 {
 	LL_GPIO_InitTypeDef gpio;
 	gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-	gpio.Pull = LL_GPIO_PULL_UP;
+	gpio.Pull = LL_GPIO_PULL_NO;
 	gpio.Speed = LL_GPIO_SPEED_FREQ_HIGH;
 	
 	gpio.Mode = LL_GPIO_MODE_OUTPUT;
@@ -389,11 +389,11 @@ void DaliController::EnableRecvInterrupt(bool state)
 		exti.LineCommand = ENABLE;
 		exti.Line_0_31 = dali.callback_line;
 		exti.Mode = LL_EXTI_MODE_IT;
-		exti.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
+		exti.Trigger = LL_EXTI_TRIGGER_RISING;
 		LL_EXTI_Init(&exti);
 		irq_en = true;
 		
-		EnableExtiIRQn(dali.callback_line,0);
+		EnableExtiIRQn(dali.callback_line,1);
 	}
 	else
 	{

@@ -5,8 +5,8 @@ ADCController::ADCController()
 	
 	samples = 5;
 	buf_cnt = 0;
-	inner_voltage = 3.3;
-	inner_voltage_coeff = inner_voltage/4095.0;
+	inner_voltage = 3.3f;
+	inner_voltage_coeff = inner_voltage/4095.0f;
 	first_data_gained = false;
 	sampling = LL_ADC_SAMPLINGTIME_56CYCLES;
 }
@@ -26,7 +26,7 @@ void ADCController::AddLine(ADC_Struct str)
 	{
 		adc[i] = last_buf[i];
 	}
-	delete [] last_buf;
+	if(size != 0) delete [] last_buf;
 	adc[size] = str;
 	adc[size].adc_ch = channel_mapping[adc[size].ch_num];
 	size++;
@@ -42,10 +42,27 @@ void ADCController::AddInnerVoltageLine()
 	new_adc.gpio = 0;
 	new_adc.pin = 0;
 	new_adc.type = ADC_TYPE_INNER_VOLTAGE;
-	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
+	//LL_ADC_SetCommonPathInternalCh(init.adc_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
 	new_adc.offset = 0;
 	AddLine(new_adc);
 	flags.voltage = 1;
+}
+//
+
+void ADCController::AddTempSensor()
+{
+	ADC_Struct new_adc;
+	new_adc.adc_ch = LL_ADC_CHANNEL_TEMPSENSOR;
+	new_adc.ch_num = TEMP_CH;
+	new_adc.coeff = 1;
+	new_adc.gpio = 0;
+	new_adc.pin = 0;
+	new_adc.type = ADC_TYPE_INNER_TEMP;
+	//LL_ADC_SetCommonPathInternalCh(init.adc_COMMON,LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	
+	new_adc.offset = 0;
+	AddLine(new_adc);
+	flags.temp = 1;
 }
 //
 
@@ -59,7 +76,7 @@ void ADCController::Init(ADC_InitStruct in_str, uint8_t samples)
 	InitDMA();
 	InitLines();
 	
-	LL_ADC_REG_StartConversionSWStart(ADC1);
+	LL_ADC_REG_StartConversionSWStart(init.adc);
 }
 //
 
@@ -72,7 +89,7 @@ void ADCController::InitGPIO()
 	for(int i = 0;i<size;++i)
 	{
 		gpio.Pin = adc[i].pin;
-		if(adc[i].type != ADC_TYPE_INNER_VOLTAGE) LL_GPIO_Init(adc[i].gpio,&gpio);
+		if(adc[i].type != ADC_TYPE_INNER_VOLTAGE && adc[i].type != ADC_TYPE_INNER_TEMP) LL_GPIO_Init(adc[i].gpio,&gpio);
 	}
 }
 //
@@ -80,16 +97,32 @@ void ADCController::InitGPIO()
 void ADCController::InitLines()
 {
 	
-	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,
+	LL_ADC_SetCommonPathInternalCh(
+	#if  defined(ADC1_COMMON)
+		ADC1_COMMON
+	#elif defined(ADC123_COMMON)
+		ADC123_COMMON
+	#endif
+	,
 	flags.voltage?LL_ADC_PATH_INTERNAL_VREFINT:0 | 
 	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0 | 
 	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0);
+	
+	LL_ADC_SetCommonClock(
+	#if  defined(ADC1_COMMON)
+		ADC1_COMMON
+	#elif defined(ADC123_COMMON)
+		ADC123_COMMON
+	#endif
+	,
+	LL_ADC_CLOCK_SYNC_PCLK_DIV2);
+	
 	
 	LL_ADC_InitTypeDef adc_ini;
 	adc_ini.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
 	adc_ini.Resolution = LL_ADC_RESOLUTION_12B;
 	adc_ini.SequencersScanMode = LL_ADC_SEQ_SCAN_ENABLE;
-	LL_ADC_Init(ADC1,&adc_ini);
+	LL_ADC_Init(init.adc,&adc_ini);
 	
 	LL_ADC_REG_InitTypeDef reg;
 	reg.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
@@ -97,15 +130,18 @@ void ADCController::InitLines()
 	reg.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
 	reg.SequencerLength = RanksCounter();
 	reg.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-	LL_ADC_REG_Init(ADC1,&reg);
+	LL_ADC_REG_Init(init.adc,&reg);
 	
 	for(int i = 0;i<size;++i)
 	{
-		LL_ADC_REG_SetSequencerRanks(ADC1,GetRank(i),adc[i].adc_ch);
-		LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,sampling);
+		LL_ADC_REG_SetSequencerRanks(init.adc,GetRank(i),adc[i].adc_ch);
+		if(adc[i].type != ADC_TYPE_INNER_TEMP) LL_ADC_SetChannelSamplingTime(init.adc,adc[i].adc_ch,sampling);
+		else if(sampling != LL_ADC_SAMPLINGTIME_3CYCLES) LL_ADC_SetChannelSamplingTime(init.adc,adc[i].adc_ch,sampling);
+		else LL_ADC_SetChannelSamplingTime(init.adc,adc[i].adc_ch,LL_ADC_SAMPLINGTIME_28CYCLES);
+		
 	}
 	
-	LL_ADC_Enable(ADC1);
+	LL_ADC_Enable(init.adc);
 }
 //
 
@@ -129,7 +165,7 @@ void ADCController::InitDMA()
 	dma.Mode = LL_DMA_MODE_CIRCULAR;
 	dma.NbData = size*samples; //ADC_CHANNELS;
 	dma.PeriphBurst = LL_DMA_PBURST_SINGLE;
-	dma.PeriphOrM2MSrcAddress = (uint32_t)&ADC1->DR;
+	dma.PeriphOrM2MSrcAddress = (uint32_t)&init.adc->DR;
 	dma.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_WORD;
 	dma.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
 	dma.Priority = LL_DMA_PRIORITY_MEDIUM;
@@ -146,8 +182,10 @@ void ADCController::InitMemory()
 	meas = new uint32_t[samples*size];
 	for(int i = 0;i<samples*size;++i) meas[i] = 0;
 	
-	results = new double[size];
+	results = new float[size];
 	for(int i =0;i<size;++i) results[i] = 0;
+	
+	meas_getter = new uint32_t[size];
 }
 //
 
@@ -204,7 +242,7 @@ uint32_t ADCController::GetRank(uint8_t c)
 
 void ADCController::Process(uint32_t ch)
 {
-	uint32_t meas_getter = 0;
+	//uint32_t meas_getter = 0;
 	uint8_t ptr;
 		
 	for(ptr = 0;ptr<size;++ptr)
@@ -212,38 +250,46 @@ void ADCController::Process(uint32_t ch)
 		if(adc[ptr].ch_num == ch)break;
 	}
 	
+	meas_getter[0] = 0;
 	for(int j = 0;j < samples;++j)
 	{
-		meas_getter += meas[j*size+ptr];
+		meas_getter[0] += meas[j*size+ptr];
 	}
-	meas_getter/=samples;
+	meas_getter[0]/=samples;
 
 	switch(adc[ptr].type)
 	{
 		case ADC_TYPE_CURRENT:
-			results[ptr] = ((meas_getter*inner_voltage_coeff + adc[ptr].offset)*adc[ptr].coeff)*1000.0; //mA
+			results[ptr] = ((meas_getter[0]*inner_voltage_coeff + adc[ptr].offset)*adc[ptr].coeff); //mA
 			break;
 		
 		case ADC_TYPE_POS_RESISTANCE:
-			results[ptr] = (adc[ptr].coeff*(4095.0/meas_getter - 1)) + adc[ptr].offset;
+			results[ptr] = (adc[ptr].coeff*(4095.0f/meas_getter[0] - 1)) + adc[ptr].offset;
 			break;
 		
 		case ADC_TYPE_NEG_RESISTANCE:
-			results[ptr] = (adc[ptr].coeff/(4095.0/meas_getter - 1)) + adc[ptr].offset;
+			results[ptr] = (adc[ptr].coeff/(4095.0f/meas_getter[0] - 1)) + adc[ptr].offset;
 			break;
 		
 		case ADC_TYPE_VOLTAGE:
-			results[ptr] = (meas_getter*inner_voltage_coeff  + adc[ptr].offset)*adc[ptr].coeff;
+			results[ptr] = (meas_getter[0]*inner_voltage_coeff  + adc[ptr].offset)*adc[ptr].coeff;
 			break;
 		
 		case ADC_TYPE_INNER_VOLTAGE:
-			results[ptr] = (1.203*4095.)/(meas_getter);
+			results[ptr] = ((VREFINT_CAL_VREF* (*VREFINT_CAL_ADDR))/(meas_getter[0]))/1000.0f;
 			inner_voltage = results[ptr];
-			inner_voltage_coeff = inner_voltage/4095.0;
+			inner_voltage_coeff = inner_voltage/4095.0f;
+		break;
+		
+		case ADC_TYPE_INNER_TEMP:
+			temp_sens1 = TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP;
+			temp_sens2 = (*TEMPSENSOR_CAL2_ADDR) - (*TEMPSENSOR_CAL1_ADDR);
+		
+			results[ptr] = ((int32_t)(meas_getter)-(*TEMPSENSOR_CAL1_ADDR))*(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP)/(float)((*TEMPSENSOR_CAL2_ADDR) - (*TEMPSENSOR_CAL1_ADDR)) + TEMPSENSOR_CAL1_TEMP;
 		break;
 		
 		case ADC_TYPE_RAW:
-			results[ptr] = (meas_getter);
+			results[ptr] = (meas_getter[0]);
 		break;
 	}
 }
@@ -251,15 +297,21 @@ void ADCController::Process(uint32_t ch)
 
 void ADCController::ProcessAll()
 {
-	uint32_t *meas_getter = new uint32_t[size];
-	for(int i = 0;i<size;++i)
+	if(samples != 1)
 	{
-		meas_getter[i]  =0;
-		for(int j = 0;j < samples;++j)
+		for(int i = 0;i<size;++i)
 		{
-			meas_getter[i] += meas[j*size+i];
+			meas_getter[i]  =0;
+			for(int j = 0;j < samples;++j)
+			{
+				meas_getter[i] += meas[j*size+i];
+			}
+			meas_getter[i]/=samples;
 		}
-		meas_getter[i]/=samples;
+	}
+	else
+	{
+		for(int i = 0;i<size;++i) meas_getter[i] = meas[i];
 	}
 	
 	for(int i = 0;i<size;++i)
@@ -267,15 +319,15 @@ void ADCController::ProcessAll()
 		switch(adc[i].type)
 		{
 			case ADC_TYPE_CURRENT:
-				results[i] = ((meas_getter[i]*inner_voltage_coeff + adc[i].offset)*adc[i].coeff)*1000.0;
+				results[i] = ((meas_getter[i]*inner_voltage_coeff + adc[i].offset)*adc[i].coeff);
 				break;
 			
 			case ADC_TYPE_POS_RESISTANCE:
-				results[i] = (adc[i].coeff*(4095.0/meas_getter[i] - 1)) + adc[i].offset;
+				results[i] = (adc[i].coeff*(4095.0f/meas_getter[i] - 1)) + adc[i].offset;
 				break;
 			
 			case ADC_TYPE_NEG_RESISTANCE:
-				results[i] = (adc[i].coeff/(4095.0/meas_getter[i] - 1)) + adc[i].offset;
+				results[i] = (adc[i].coeff/(4095.0f/meas_getter[i] - 1)) + adc[i].offset;
 				break;
 			
 			case ADC_TYPE_VOLTAGE:
@@ -283,27 +335,37 @@ void ADCController::ProcessAll()
 				break;
 			
 			case ADC_TYPE_INNER_VOLTAGE:
-				results[i] = (1.203*4095.)/(meas_getter[i]);
+				results[i] = ((VREFINT_CAL_VREF* (*VREFINT_CAL_ADDR))/(meas_getter[i]))/1000.0f;
 				inner_voltage = results[i];
-				inner_voltage_coeff = inner_voltage/4095.0;
+				inner_voltage_coeff = inner_voltage/4095.0f;
 			break;
+			
+			case ADC_TYPE_INNER_TEMP:
+			results[i] = ((meas_getter[i])-(int32_t)*TEMPSENSOR_CAL1_ADDR)*(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP)/((int32_t)*TEMPSENSOR_CAL2_ADDR - (int32_t)*TEMPSENSOR_CAL1_ADDR)+ TEMPSENSOR_CAL1_TEMP;
+		break;
 			
 			case ADC_TYPE_RAW:
 				results[i] = (meas_getter[i]);
 			break;
 		}
 	}
-	delete[] meas_getter;
+	//delete[] meas_getter;
 }
 //
 
 void ADCController::ProcessInner()
 {
-	Process(LL_ADC_CHANNEL_VREFINT);
+	Process(V_REF_CH);
 }
 //
 
-double ADCController::getMeasure(uint8_t adc_num)
+void ADCController::ProcessTemp()
+{
+	Process(TEMP_CH);
+}
+//
+
+float ADCController::getMeasure(uint8_t adc_num)
 {
 	for(int i = 0;i<size;++i)
 	{
@@ -314,7 +376,13 @@ double ADCController::getMeasure(uint8_t adc_num)
 }
 //
 
-double *ADCController::GetPointerToChannel(uint8_t ch)
+float ADCController::GetTemp()
+{
+	return getMeasure(TEMP_CH);
+}
+//
+
+float *ADCController::GetPointerToChannel(uint8_t ch)
 {
 	for(int i = 0;i<size;++i)
 	{
@@ -324,6 +392,17 @@ double *ADCController::GetPointerToChannel(uint8_t ch)
 	return 0x00;
 }
 //
+
+
+uint32_t *ADCController::GetPointerToMeas(uint8_t ch_num)
+{
+	for(int i = 0;i<size;++i)
+	{
+		if(adc[i].ch_num == ch_num) return &meas[i];
+	}
+	
+	return 0x00;
+}
 
 void ADCController::SwapChannels(uint8_t ch1, uint8_t ch2)
 {

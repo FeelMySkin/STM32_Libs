@@ -42,6 +42,7 @@ class GPS_Controller
 		volatile bool completed;
 		volatile uint8_t pointer;
 		bool test_bool;
+		uint8_t bad_baud_tim;
 		uint32_t timeout;
 		UsartController*	usart;
 };

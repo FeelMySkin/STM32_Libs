@@ -17,7 +17,8 @@ struct UsartController_InitTypeDef
 	uint32_t		rx_pin;
 	uint32_t		usart_af;
 	DMA_TypeDef*	dma;
-	uint32_t		dma_channel;
+	uint32_t		dma_rx_channel;
+	uint32_t		dma_tx_channel;
 	uint32_t		dma_tx_stream;
 	uint32_t		dma_rx_stream;
 	uint32_t		baud;
@@ -35,6 +36,7 @@ class UsartController
 	public:
 		void Init(UsartController_InitTypeDef);
 		void SetBaud(uint32_t baud);
+		uint32_t GetBaud() {return usart.baud;}
 		void SetBufferSize(uint16_t);
 		void SetBufferPtr(uint8_t* ptr);
 		void ClearBuffer();
