@@ -2,9 +2,8 @@
 
 ADCController::ADCController()
 {
-	
-	samples = 5;
-	buf_cnt = 0;
+	/** set defaults */
+	samples = 5; 
 	inner_voltage = 3.3f;
 	inner_voltage_coeff = inner_voltage/4095.0f;
 	first_data_gained = false;
@@ -20,21 +19,23 @@ ADCController::~ADCController()
 
 void ADCController::AddLine(ADC_Struct str)
 {
-	ADC_Struct *last_buf = adc;
-	adc = new ADC_Struct[size+1];
+	/** adds new channel structure to the list */
+	ADC_Struct *last_buf = adc; //gets pointer to the last buffer
+	adc = new ADC_Struct[size+1]; // expands the old buffer
 	for(int i = 0;i<size;++i)
 	{
-		adc[i] = last_buf[i];
+		adc[i] = last_buf[i]; //copy to new
 	}
-	if(size != 0) delete [] last_buf;
+	if(size != 0) delete [] last_buf; //delete old
 	adc[size] = str;
-	adc[size].adc_ch = channel_mapping[adc[size].ch_num];
+	adc[size].adc_ch = channel_mapping[adc[size].ch_num]; //add channel to the list
 	size++;
 }
 //
 
 void ADCController::AddInnerVoltageLine()
 {
+	/** Initializr struct and call AddLine */
 	ADC_Struct new_adc;
 	new_adc.adc_ch = LL_ADC_CHANNEL_VREFINT;
 	new_adc.ch_num = V_REF_CH;
@@ -42,7 +43,6 @@ void ADCController::AddInnerVoltageLine()
 	new_adc.gpio = 0;
 	new_adc.pin = 0;
 	new_adc.type = ADC_TYPE_INNER_VOLTAGE;
-	//LL_ADC_SetCommonPathInternalCh(init.adc_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
 	new_adc.offset = 0;
 	AddLine(new_adc);
 	flags.voltage = 1;
@@ -51,6 +51,7 @@ void ADCController::AddInnerVoltageLine()
 
 void ADCController::AddTempSensor()
 {
+	/** Initializr struct and call AddLine */
 	ADC_Struct new_adc;
 	new_adc.adc_ch = LL_ADC_CHANNEL_TEMPSENSOR;
 	new_adc.ch_num = TEMP_CH;
@@ -58,7 +59,6 @@ void ADCController::AddTempSensor()
 	new_adc.gpio = 0;
 	new_adc.pin = 0;
 	new_adc.type = ADC_TYPE_INNER_TEMP;
-	//LL_ADC_SetCommonPathInternalCh(init.adc_COMMON,LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 	
 	new_adc.offset = 0;
 	AddLine(new_adc);
@@ -68,6 +68,7 @@ void ADCController::AddTempSensor()
 
 void ADCController::Init(ADC_InitStruct in_str, uint8_t samples)
 {
+	/** Initialize peripheral */
 	init = in_str;
 	this->samples = samples;
 	SortLines();
@@ -76,12 +77,14 @@ void ADCController::Init(ADC_InitStruct in_str, uint8_t samples)
 	InitDMA();
 	InitLines();
 	
+	/** Start endless readings */
 	LL_ADC_REG_StartConversionSWStart(init.adc);
 }
 //
 
 void ADCController::InitGPIO()
 {	
+	/** Initialize pins and set them to Analog */
 	LL_GPIO_InitTypeDef gpio;
 	gpio.Mode = LL_GPIO_MODE_ANALOG;
 	gpio.Pull = LL_GPIO_PULL_NO;
@@ -96,7 +99,7 @@ void ADCController::InitGPIO()
 
 void ADCController::InitLines()
 {
-	
+	/** Enables inner channels (if enabled) */
 	LL_ADC_SetCommonPathInternalCh(
 	#if  defined(ADC1_COMMON)
 		ADC1_COMMON
@@ -108,6 +111,7 @@ void ADCController::InitLines()
 	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0 | 
 	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0);
 	
+	/** Sets ADCs clock */
 	LL_ADC_SetCommonClock(
 	#if  defined(ADC1_COMMON)
 		ADC1_COMMON
@@ -117,13 +121,14 @@ void ADCController::InitLines()
 	,
 	LL_ADC_CLOCK_SYNC_PCLK_DIV2);
 	
-	
+	/* Initialize ADC base functions */
 	LL_ADC_InitTypeDef adc_ini;
 	adc_ini.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
 	adc_ini.Resolution = LL_ADC_RESOLUTION_12B;
 	adc_ini.SequencersScanMode = LL_ADC_SEQ_SCAN_ENABLE;
 	LL_ADC_Init(init.adc,&adc_ini);
 	
+	/** Initialize ADCs Regular channels */
 	LL_ADC_REG_InitTypeDef reg;
 	reg.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
 	reg.DMATransfer = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
@@ -132,6 +137,7 @@ void ADCController::InitLines()
 	reg.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
 	LL_ADC_REG_Init(init.adc,&reg);
 	
+	/** Write channels to sequencer */
 	for(int i = 0;i<size;++i)
 	{
 		LL_ADC_REG_SetSequencerRanks(init.adc,GetRank(i),adc[i].adc_ch);
@@ -141,6 +147,7 @@ void ADCController::InitLines()
 		
 	}
 	
+	/** Enables peripheral */
 	LL_ADC_Enable(init.adc);
 }
 //
@@ -153,6 +160,7 @@ void ADCController::SetSamplingTime(uint32_t sampling)
 
 void ADCController::InitDMA()
 {	
+	/** Enables DMA. From ADC to RAW array (meas) Alligned by WORD */
 	LL_DMA_InitTypeDef dma;
 	dma.Channel = init.dma_channel;
 	dma.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
@@ -171,6 +179,7 @@ void ADCController::InitDMA()
 	dma.Priority = LL_DMA_PRIORITY_MEDIUM;
 	LL_DMA_Init(init.dma,init.dma_stream,&dma);
 	
+	/** Enables Interrupt and Stream */
 	LL_DMA_EnableIT_TC(init.dma,init.dma_stream);
 	LL_DMA_EnableStream(init.dma,init.dma_stream);
 	
@@ -179,26 +188,30 @@ void ADCController::InitDMA()
 
 void ADCController::InitMemory()
 {
+	/** Allocate meas (RAW) array */
 	meas = new uint32_t[samples*size];
 	for(int i = 0;i<samples*size;++i) meas[i] = 0;
 	
+	/** Allocate result (Counted) array */
 	results = new float[size];
 	for(int i =0;i<size;++i) results[i] = 0;
 	
+	/** Allocate averaging array (For ProcessAll) */
 	meas_getter = new uint32_t[size];
 }
 //
 
 void ADCController::EnableDmaInterrupt(bool stat)
 {
+	/** Enables or Disables IRQ_Handler */
 	if(stat) EnableDmaIRQn(init.dma,init.dma_stream,1);
-	else DisableDmaIRQn(init.dma,init.dma_stream
-		);
+	else DisableDmaIRQn(init.dma,init.dma_stream);
 }
 //
 
 uint32_t ADCController::RanksCounter()
 {
+	/** Get Sequencer Ranks based on Channel List size */
 	if(size == 1) return LL_ADC_REG_SEQ_SCAN_DISABLE;
 	if(size == 2) return LL_ADC_REG_SEQ_SCAN_ENABLE_2RANKS;
 	if(size == 3) return LL_ADC_REG_SEQ_SCAN_ENABLE_3RANKS;
@@ -220,6 +233,7 @@ uint32_t ADCController::RanksCounter()
 
 uint32_t ADCController::GetRank(uint8_t c)
 {
+	/** Sets current channel rank */
 	c=c+1;
 	if(c == 1) return LL_ADC_REG_RANK_1;
 	if(c == 2) return LL_ADC_REG_RANK_2;
@@ -242,14 +256,15 @@ uint32_t ADCController::GetRank(uint8_t c)
 
 void ADCController::Process(uint32_t ch)
 {
-	//uint32_t meas_getter = 0;
+	/** Process Single channel */
 	uint8_t ptr;
-		
+	/** Gets channel position in list */
 	for(ptr = 0;ptr<size;++ptr)
 	{
 		if(adc[ptr].ch_num == ch)break;
 	}
 	
+	/** Average samples from channel */
 	meas_getter[0] = 0;
 	for(int j = 0;j < samples;++j)
 	{
@@ -257,38 +272,43 @@ void ADCController::Process(uint32_t ch)
 	}
 	meas_getter[0]/=samples;
 
+	/** Count channel by type */
 	switch(adc[ptr].type)
 	{
 		case ADC_TYPE_CURRENT:
+			/**((raw*3.3/4095)+offset)*coeff */
 			results[ptr] = ((meas_getter[0]*inner_voltage_coeff + adc[ptr].offset)*adc[ptr].coeff); //mA
 			break;
 		
 		case ADC_TYPE_POS_RESISTANCE:
-			results[ptr] = (adc[ptr].coeff*(4095.0f/meas_getter[0] - 1)) + adc[ptr].offset;
+			/** (coeff*(4095/raw - 1) + offset) */
+			results[ptr] = (adc[ptr].coeff*(4095.0f/meas_getter[0] - 1)) + adc[ptr].offset; //Ohms
 			break;
 		
 		case ADC_TYPE_NEG_RESISTANCE:
-			results[ptr] = (adc[ptr].coeff/(4095.0f/meas_getter[0] - 1)) + adc[ptr].offset;
+			/** (coeff/(4095/raw - 1) + offset) */
+			results[ptr] = (adc[ptr].coeff/(4095.0f/meas_getter[0] - 1)) + adc[ptr].offset; //Ohms
 			break;
 		
 		case ADC_TYPE_VOLTAGE:
-			results[ptr] = (meas_getter[0]*inner_voltage_coeff  + adc[ptr].offset)*adc[ptr].coeff;
+			/** (raw*3.3/4095 + offset)*coeff */
+			results[ptr] = (meas_getter[0]*inner_voltage_coeff  + adc[ptr].offset)*adc[ptr].coeff; //V
 			break;
 		
 		case ADC_TYPE_INNER_VOLTAGE:
-			results[ptr] = ((VREFINT_CAL_VREF* (*VREFINT_CAL_ADDR))/(meas_getter[0]))/1000.0f;
-			inner_voltage = results[ptr];
+			/** See datasheet */
+			results[ptr] = ((VREFINT_CAL_VREF* (*VREFINT_CAL_ADDR))/(meas_getter[0]))/1000.0f; //V
+			inner_voltage = results[ptr]; //V
 			inner_voltage_coeff = inner_voltage/4095.0f;
 		break;
 		
-		case ADC_TYPE_INNER_TEMP:
-			temp_sens1 = TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP;
-			temp_sens2 = (*TEMPSENSOR_CAL2_ADDR) - (*TEMPSENSOR_CAL1_ADDR);
-		
-			results[ptr] = ((int32_t)(meas_getter)-(*TEMPSENSOR_CAL1_ADDR))*(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP)/(float)((*TEMPSENSOR_CAL2_ADDR) - (*TEMPSENSOR_CAL1_ADDR)) + TEMPSENSOR_CAL1_TEMP;
+		case ADC_TYPE_INNER_TEMP:		
+			/**See Datasheet */
+			results[ptr] = ((int32_t)(meas_getter)-(*TEMPSENSOR_CAL1_ADDR))*(TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP)/(float)((*TEMPSENSOR_CAL2_ADDR) - (*TEMPSENSOR_CAL1_ADDR)) + TEMPSENSOR_CAL1_TEMP;//degC
 		break;
 		
 		case ADC_TYPE_RAW:
+		/** Nothing to do */
 			results[ptr] = (meas_getter[0]);
 		break;
 	}
@@ -297,6 +317,7 @@ void ADCController::Process(uint32_t ch)
 
 void ADCController::ProcessAll()
 {
+	/** See Process(), but averaging and counting every channel */
 	if(samples != 1)
 	{
 		for(int i = 0;i<size;++i)
@@ -349,7 +370,6 @@ void ADCController::ProcessAll()
 			break;
 		}
 	}
-	//delete[] meas_getter;
 }
 //
 
@@ -367,12 +387,14 @@ void ADCController::ProcessTemp()
 
 float ADCController::getMeasure(uint8_t adc_num)
 {
+	/** find corresponding channel number and return */
 	for(int i = 0;i<size;++i)
 	{
 		if(adc[i].ch_num == adc_num) return results[i];
 	}
 	
-	return 0xFF;
+	/** if nothing - return 0 */
+	return 0;
 }
 //
 
@@ -384,11 +406,13 @@ float ADCController::GetTemp()
 
 float *ADCController::GetPointerToChannel(uint8_t ch)
 {
+	/** find corresponding channel number and return pointer to result */
 	for(int i = 0;i<size;++i)
 	{
 		if(adc[i].ch_num == ch) return &results[i];
 	}
 	
+	/**or return 0 */
 	return 0x00;
 }
 //
@@ -396,13 +420,16 @@ float *ADCController::GetPointerToChannel(uint8_t ch)
 
 uint32_t *ADCController::GetPointerToMeas(uint8_t ch_num)
 {
+	/** find corresponding channel number and return pointer to meas */
 	for(int i = 0;i<size;++i)
 	{
 		if(adc[i].ch_num == ch_num) return &meas[i];
 	}
 	
+	/**or return 0 */
 	return 0x00;
 }
+//
 
 void ADCController::SwapChannels(uint8_t ch1, uint8_t ch2)
 {
@@ -416,6 +443,8 @@ void ADCController::SortLines()
 {
 	uint8_t minimal = 0;
 	
+	/**UNEFFECTIVELY Sort by Channel number */
+
 	for(int i = 0;i<size;++i)
 	{
 		minimal = i;
@@ -424,13 +453,6 @@ void ADCController::SortLines()
 			if(adc[minimal].ch_num > adc[j].ch_num) minimal = j;
 		}
 		if(minimal != i) SwapChannels(i,minimal);
-	}
-	
-	for(int i = 0;i<size;++i)
-	{
-		if(adc[i].adc_ch == LL_ADC_CHANNEL_TEMPSENSOR) flags.t_ptr = i;
-		else if(adc[i].adc_ch == LL_ADC_CHANNEL_VBAT) flags.b_ptr = i;
-		else if(adc[i].adc_ch == LL_ADC_CHANNEL_VREFINT) flags.v_ptr = i;
 	}
 }
 //
