@@ -4,7 +4,7 @@ void EnableExtiIRQn(uint32_t exti, uint8_t prio)
 {
 	switch(exti)
 	{
-		case LL_EXTI_LINE_0:
+		case LL_EXTI_LINE_0: /**< exti*/
 			NVIC_EnableIRQ(EXTI0_IRQn);
 			NVIC_SetPriority(EXTI0_IRQn,prio);
 		break;

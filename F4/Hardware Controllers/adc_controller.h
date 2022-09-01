@@ -1,40 +1,69 @@
+/**
+ * @file adc_controller.h
+ * @author Phil (zetsuboulevel@gmail.com)
+ * @brief ADC C++ class based on STM32 LL Library.
+ * @version 0.1
+ * @date 2022-08-31
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #ifndef ADC_CONTROLLER_H
 #define ADC_CONTROLLER_H
 
 #include "defines.h"
 
+/**
+ * @brief Hard-defines channel numbers
+ * 
+ */
 #define ADCs_quant 19
 #define TEMP_CH		16
 #define V_REF_CH	17
 #define V_BAT_CH	18
 
+/**
+ * @brief Channel mapping for initializing
+ * 
+ */
 const uint32_t channel_mapping[ADCs_quant] = 	{LL_ADC_CHANNEL_0,LL_ADC_CHANNEL_1,LL_ADC_CHANNEL_2,LL_ADC_CHANNEL_3,LL_ADC_CHANNEL_4,LL_ADC_CHANNEL_5,LL_ADC_CHANNEL_6,
 										LL_ADC_CHANNEL_7,LL_ADC_CHANNEL_8,LL_ADC_CHANNEL_9,LL_ADC_CHANNEL_10,LL_ADC_CHANNEL_11,LL_ADC_CHANNEL_12,LL_ADC_CHANNEL_13,
 										LL_ADC_CHANNEL_14,LL_ADC_CHANNEL_15,LL_ADC_CHANNEL_TEMPSENSOR,LL_ADC_CHANNEL_VREFINT,LL_ADC_CHANNEL_VBAT};
 
-										
-										
+/**
+ * @brief Type of ADC measure.
+ * 
+ */
 enum ADC_TYPE
 {
-	ADC_TYPE_VOLTAGE,
-	ADC_TYPE_CURRENT,
-	ADC_TYPE_POS_RESISTANCE,
-	ADC_TYPE_NEG_RESISTANCE,
-	ADC_TYPE_INNER_VOLTAGE,
-	ADC_TYPE_RAW
+	ADC_TYPE_VOLTAGE, /** Count RAW data to Voltage */
+	ADC_TYPE_CURRENT, /** Count RAW data to Current */
+	ADC_TYPE_POS_RESISTANCE, /** Count RAW data to Resistance */
+	ADC_TYPE_NEG_RESISTANCE, /** Count RAW data to Resistance */
+	ADC_TYPE_INNER_VOLTAGE, /** Count inner(supply) voltage */
+	ADC_TYPE_RAW /** RAW data from ADC */
 };
 
+/**
+ * @brief ADC Channel Initializer
+ * 
+ */
 struct ADC_Struct
 {
-	ADC_TYPE 		type;
-	GPIO_TypeDef* 	gpio;
-	uint32_t		pin;
-	float			coeff;
-	uint32_t		adc_ch;
-	uint8_t 		ch_num;
-	float			offset;
+	ADC_TYPE 		type; /** ADC_TYPE*/
+	GPIO_TypeDef* 	gpio; /** set GPIO* (exmpl GPIOA) */
+	uint32_t		pin; /** set LL_GPIO_PIN_* */
+	float			coeff; /** set correcting coefficient (for voltage dividers, current shunt etc) */
+	uint32_t		adc_ch; /** not need to set this (it is LL_ADC_CHANNEL_CH*) */
+	uint8_t 		ch_num; /** set ch number (not LL_ADC_CHANNEL_CH*). (0~15) */
+	float			offset; /** offset from base voltage (0-3.3) */
 };
 
+/**
+ * @brief ADC DMA Initializer Struct.
+ * 
+ */
 struct ADC_InitStruct
 {
 	DMA_TypeDef* 	dma;
