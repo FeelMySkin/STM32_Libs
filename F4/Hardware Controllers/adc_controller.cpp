@@ -1,4 +1,5 @@
 #include "adc_controller.h"
+#include "stdlib.h"
 
 ADCController::ADCController()
 {
@@ -20,13 +21,19 @@ ADCController::~ADCController()
 void ADCController::AddLine(ADC_Struct str)
 {
 	/** adds new channel structure to the list */
-	ADC_Struct *last_buf = adc; //gets pointer to the last buffer
+	/*ADC_Struct *last_buf = adc; //gets pointer to the last buffer
 	adc = new ADC_Struct[size+1]; // expands the old buffer
 	for(int i = 0;i<size;++i)
 	{
 		adc[i] = last_buf[i]; //copy to new
 	}
-	if(size != 0) delete [] last_buf; //delete old
+	if(size != 0) delete [] last_buf; //delete old*/
+
+	/**If ADC is not initialized, init it*/
+	if(size == 0) adc = new ADC_Struct[1];
+	/**Else reallocate memory for new Initializer */
+	else adc = reinterpret_cast<ADC_Struct*>(realloc(adc,(size+1)*sizeof(ADC_Struct)));
+
 	adc[size] = str;
 	adc[size].adc_ch = channel_mapping[adc[size].ch_num]; //add channel to the list
 	size++;
