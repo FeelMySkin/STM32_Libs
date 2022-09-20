@@ -33,8 +33,12 @@ void WS2812Controller::Init(WS_TypeDef ws)
 	InitTIM();
 	InitDMA();
 	
-	/**DUMMY wait and Colorize */
-	for(int i = 0;i<1000000;++i) asm("NOP");
+	/**Count timings and Colorize 
+	 * *4/5 (for 1 bit) or *1/5 (for 0 bit)
+	*/
+	one_bittime =  ws.ws_tim->ARR*4/5;
+	zero_bittime = ws.ws_tim->ARR*1/5;
+	//for(int i = 0;i<1000000;++i) asm("NOP");
 	Colorize();
 }
 //
@@ -124,6 +128,13 @@ void WS2812Controller::SetPixelColor(uint8_t number,uint8_t red, uint8_t green, 
 void WS2812Controller::SetPixelColor(uint8_t number, Color color)
 {
 	colors_new[number]=color;
+	for(int j = 0;j<8;++j)
+	{
+		/** count for evey channel */
+		bittime_stream[24*i+j+1] = (colors_new[number].red>>(7-j))&1?one_bittime:zero_bittime;
+		bittime_stream[24*i+8+j+1] = (colors_new[number].green>>(7-j))&1?one_bittime:zero_bittime;
+		bittime_stream[24*i+16+j+1] = (colors_new[number].blue>>(7-j))&1?one_bittime:zero_bittime;
+	}
 }
 //
 
@@ -141,13 +152,12 @@ void WS2812Controller::Colorize()
 	{
 		for(int i = 0;i<ws.pixels;++i)
 		{
-			for(int j = 0;j<8;++j)
+			/*for(int j = 0;j<8;++j)
 			{
-				/** count for evey channel */
-				bittime_stream[24*i+j+1] = (colors_new[i].red>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5; //*4/5 (for 1 bit) or *1/5 (for 0 bit)
-				bittime_stream[24*i+8+j+1] = (colors_new[i].green>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
-				bittime_stream[24*i+16+j+1] = (colors_new[i].blue>>(7-j))&1?ws.ws_tim->ARR*4/5:ws.ws_tim->ARR*1/5;
-			}
+				bittime_stream[24*i+j+1] = (colors_new[i].red>>(7-j))&1?one_bittime:zero_bittime;
+				bittime_stream[24*i+8+j+1] = (colors_new[i].green>>(7-j))&1?one_bittime:zero_bittime;
+				bittime_stream[24*i+16+j+1] = (colors_new[i].blue>>(7-j))&1?one_bittime:zero_bittime;
+			}*/
 			colors_old[i]=colors_new[i];
 		}
 

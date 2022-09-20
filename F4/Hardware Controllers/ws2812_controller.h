@@ -128,6 +128,7 @@ class WS2812Controller
 		uint16_t* bittime_stream; /** stream to DMA. COntains timings for every bit */
 		Color* colors_new; /** New colors data */
 		Color* colors_old; /** Old colors data */
+		uint16_t zero_bittime, one_bittime; /** for fast-counting */
 };
 
 
