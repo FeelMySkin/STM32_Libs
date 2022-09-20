@@ -16,7 +16,7 @@
 #include "periph_functions.h"
 
 #define DALI_HYST 			250 /** HYSTERESIS in timings */
-#define DEBUG_RECEIVER /**Enables DEBUG buffer
+#define DEBUG_RECEIVER /**Enables DEBUG buffer */
 #define DALI_BAUDS_COUNT	4 /** Number of BAUDS */
 
 const uint16_t DALI_BAUDS[DALI_BAUDS_COUNT] = {1200,2400,4800,9600}; /** Some baud rates that can be used (not all of them can work) */
@@ -42,7 +42,7 @@ enum DALI_TYPE
 };
 
 /**
- * @brief Type of received pulses from RX */
+ * @brief Type of received pulses from RX 
  * 
  */
 enum DALI_RECEIVED_PULSE
