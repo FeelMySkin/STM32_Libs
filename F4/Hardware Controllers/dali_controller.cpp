@@ -208,7 +208,7 @@ void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
 
 	/** get bits from message */
 	uint8_t bits[32];
-	for(int i = 0;i<n_bits;++i) bits[i] = (to_send>>(n_bits-i))&1;
+	for(int i = 0;i<n_bits;++i) bits[i] = (to_send>>((n_bits-1)-i))&1;
 	send_len = 0;
 	
 	/** Get halfbit timing (Manchester encoding) */
