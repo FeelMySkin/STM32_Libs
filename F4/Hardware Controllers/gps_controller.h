@@ -13,7 +13,7 @@
 #define GPS_CONTROLLER_H
 
 #include "periph_functions.h"
-#include "help_funcitons.h"
+#include "help_functions.h"
 #include "usart_controller.h"
 
 
