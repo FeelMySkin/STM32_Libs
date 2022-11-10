@@ -1,4 +1,5 @@
 #include "adc_controller.h"
+#include "stdlib.h"
 
 ADCController::ADCController()
 {
@@ -22,13 +23,16 @@ ADCController::~ADCController()
 void ADCController::AddLine(ADC_Struct str)
 {
 	
-	ADC_Struct *last_buf = adc;
-	adc = new ADC_Struct[size+1];
-	for(int i = 0;i<size;++i)
+	//ADC_Struct *last_buf = adc;
+	//adc = new ADC_Struct[size+1];
+	if(size == 0) adc = new ADC_Struct[1];
+	else adc = reinterpret_cast<ADC_Struct*>(realloc(adc,(size+1)*sizeof(ADC_Struct)));
+	
+	/*for(int i = 0;i<size;++i)
 	{
 		adc[i] = last_buf[i];
 	}
-	delete [] last_buf;
+	delete [] last_buf;*/
 	
 	adc[size] = str;
 	adc[size].adc_ch = channel_mapping[adc[size].ch_num];
