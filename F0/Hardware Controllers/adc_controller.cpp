@@ -20,15 +20,13 @@ ADCController::~ADCController()
 
 void ADCController::AddLine(ADC_Struct str)
 {
-	ADC_Struct *last_buf = adc;
-	adc = new ADC_Struct[size+1];
-	for(int i = 0;i<size;++i)
-	{
-		adc[i] = last_buf[i];
-	}
-	delete [] last_buf;
+	/**If ADC is not initialized, init it*/
+	if(size == 0) adc = new ADC_Struct[1];
+	/**Else reallocate memory for new Initializer */
+	else adc = reinterpret_cast<ADC_Struct*>(realloc(adc,(size+1)*sizeof(ADC_Struct)));
+
 	adc[size] = str;
-	adc[size].adc_ch = channel_mapping[adc[size].ch_num];
+	adc[size].adc_ch = channel_mapping[adc[size].ch_num]; //add channel to the list
 	size++;
 }
 //
@@ -44,15 +42,15 @@ void ADCController::AddInnerVoltageLine()
 	new_adc.pin = 0;
 	new_adc.type = ADC_TYPE_INNER_VOLTAGE;
 	new_adc.offset = 0;
-	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,LL_ADC_PATH_INTERNAL_VREFINT);
 	
 	AddLine(new_adc);
 	flags.voltage = 1;
 }
 //
 
-void ADCController::Init(uint8_t samples)
+void ADCController::Init(ADC_InitStruct in_str,uint8_t samples)
 {
+	this->init = in_str;
 	this->samples = samples;
 	SortLines();
 	InitMemory();
@@ -84,7 +82,11 @@ void ADCController::InitLines()
 	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,
 	flags.voltage?LL_ADC_PATH_INTERNAL_VREFINT:0 | 
 	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0 | 
-	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0);
+	#ifdef LL_ADC_PATH_INTERNAL_VBAT
+	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0
+	#endif
+	0
+	);
 	
 	LL_ADC_StartCalibration(ADC1);
 	while(LL_ADC_IsCalibrationOnGoing(ADC1)) asm("NOP");
@@ -134,11 +136,11 @@ void ADCController::InitDMA()
 	dma.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_WORD;
 	dma.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
 	dma.Priority = LL_DMA_PRIORITY_HIGH;
-	LL_DMA_Init(ADC_DMA,ADC_DMA_CHANNEL,&dma);
+	LL_DMA_Init(init.dma,init.dma_channel,&dma);
 	
-	LL_DMA_EnableIT_TC(ADC_DMA,ADC_DMA_CHANNEL);
+	LL_DMA_EnableIT_TC(init.dma,init.dma_channel);
 	
-	LL_DMA_EnableChannel(ADC_DMA,ADC_DMA_CHANNEL);
+	LL_DMA_EnableChannel(init.dma,init.dma_channel);
 	
 }
 //
@@ -155,12 +157,12 @@ void ADCController::InitMemory()
 
 void ADCController::EnableDmaInterrupt(bool stat)
 {
-	if(stat) EnableDmaIRQn(ADC_DMA,ADC_DMA_CHANNEL,1);
-	else DisableDmaIRQn(ADC_DMA,ADC_DMA_CHANNEL);
+	if(stat) EnableDmaIRQn(init.dma,init.dma_channel,1);
+	else DisableDmaIRQn(init.dma,init.dma_channel);
 }
 //
 
-void ADCController::Process(uint32_t ch)
+void ADCController::Process(uint8_t ch)
 {
 	uint32_t meas_getter = 0;
 	uint8_t ptr;
@@ -261,7 +263,7 @@ void ADCController::ProcessInner()
 }
 //
 
-double ADCController::getMeasure(uint32_t adc_channel)
+double ADCController::getMeasure(uint8_t adc_channel)
 {
 	for(int i = 0;i<size;++i)
 	{
@@ -295,11 +297,5 @@ void ADCController::SortLines()
 		if(minimal != i) SwapChannels(i,minimal);
 	}
 	
-	for(int i = 0;i<size;++i)
-	{
-		if(adc[i].adc_ch == LL_ADC_CHANNEL_TEMPSENSOR) flags.t_ptr = i;
-		else if(adc[i].adc_ch == LL_ADC_CHANNEL_VBAT) flags.b_ptr = i;
-		else if(adc[i].adc_ch == LL_ADC_CHANNEL_VREFINT) flags.v_ptr = i;
-	}
 }
 //
