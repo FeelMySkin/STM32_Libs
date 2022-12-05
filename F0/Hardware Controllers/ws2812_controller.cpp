@@ -109,6 +109,7 @@ void WS2812Controller::InitTIM()
 	LL_TIM_OC_EnablePreload(ws.ws_tim,ws.ws_tim_ch);
 	LL_TIM_CC_EnableChannel(ws.ws_tim,ws.ws_tim_ch);
 	LL_TIM_EnableCounter(ws.ws_tim);
+	LL_TIM_EnableAllOutputs(ws.ws_tim);
 	
 	/** Enable DMA by UPDATE event */
 	LL_TIM_EnableDMAReq_UPDATE(ws.ws_tim);
@@ -158,6 +159,7 @@ void WS2812Controller::Colorize()
 		}
 
 		/** Set length and enable DMA */
+		LL_DMA_DisableChannel(ws.ws_dma, ws.ws_dma_channel);
 		ClearDmaTCFlag(ws.ws_dma,ws.ws_dma_channel);
 		LL_DMA_SetDataLength(ws.ws_dma,ws.ws_dma_channel,24*ws.pixels+2);
 		LL_DMA_EnableChannel(ws.ws_dma,ws.ws_dma_channel);
