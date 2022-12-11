@@ -20,9 +20,9 @@ void WS2812Controller::Init(WS_TypeDef ws)
 	/** Initialize memory with 24bit*pixels + start and stop bit (for TIM sync).
 	 * And set first and last bits to 0
 	 */
-	bittime_stream = new uint16_t[ws.pixels*24+2];
+	bittime_stream = new uint16_t[ws.pixels*3*4*ws.bit_width+2];
 	bittime_stream[0] = 0x00;
-	bittime_stream[24*ws.pixels+1] = 0x00;
+	bittime_stream[3*4*ws.bit_width*ws.pixels+1] = 0x00;
 	/** Set old color to 0 (to draw first 0-row) */
 	colors_old = new Color[ws.pixels];
 	colors_new = new Color[ws.pixels];
@@ -122,18 +122,52 @@ void WS2812Controller::SetPixelColor(uint8_t number,uint8_t red, uint8_t green, 
 }
 //
 
+
 void WS2812Controller::SetPixelColor(uint8_t number, Color color)
 {
 	colors_new[number]=color;
-	for(int j = 0;j<8;++j)
+	Color col;
+	switch (ws.col_pos)
 	{
-		/** count for evey channel */
-		bittime_stream[24*number+j+1] = (colors_new[number].red>>(7-j))&1?one_bittime:zero_bittime;
-		bittime_stream[24*number+8+j+1] = (colors_new[number].green>>(7-j))&1?one_bittime:zero_bittime;
-		bittime_stream[24*number+16+j+1] = (colors_new[number].blue>>(7-j))&1?one_bittime:zero_bittime;
+		case WS_RGB:
+			col = Color(color.red, color.green, color.blue);
+		break;
+		
+		case WS_RBG:
+			col = Color(color.red, color.blue, color.green);
+		break;
+		
+		case WS_GRB:
+			col = Color(color.green, color.red, color.blue);
+		break;
+		
+		case WS_GBR:
+			col = Color(color.green, color.blue, color.red);
+		break;
+		
+		case WS_BGR:
+			col = Color(color.blue, color.green, color.red);
+		break;
+		
+		case WS_BRG:
+			col = Color(color.blue, color.red, color.green);
+		break;
+			
 	}
+	Pixelize(number, col);
 }
 //
+
+void WS2812Controller::Pixelize(uint8_t num, Color color)
+{
+	for(int j = 0;j<4*ws.bit_width;++j)
+	{
+		/** count for evey channel */
+		bittime_stream[3*4*ws.bit_width*num+j+1] = (color.red>>(4*ws.bit_width-1-j))&1?one_bittime:zero_bittime;
+		bittime_stream[3*4*ws.bit_width*num+4*ws.bit_width+j+1] = (color.green>>(4*ws.bit_width-1-j))&1?one_bittime:zero_bittime;
+		bittime_stream[3*4*ws.bit_width*num+2*4*ws.bit_width+j+1] = (color.blue>>(4*ws.bit_width-1-j))&1?one_bittime:zero_bittime;
+	}
+}
 
 void WS2812Controller::Colorize()
 {
@@ -161,7 +195,7 @@ void WS2812Controller::Colorize()
 		/** Set length and enable DMA */
 		LL_DMA_DisableChannel(ws.ws_dma, ws.ws_dma_channel);
 		ClearDmaTCFlag(ws.ws_dma,ws.ws_dma_channel);
-		LL_DMA_SetDataLength(ws.ws_dma,ws.ws_dma_channel,24*ws.pixels+2);
+		LL_DMA_SetDataLength(ws.ws_dma,ws.ws_dma_channel,3*4*ws.bit_width*ws.pixels+2);
 		LL_DMA_EnableChannel(ws.ws_dma,ws.ws_dma_channel);
 		
 	}

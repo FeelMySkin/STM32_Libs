@@ -18,6 +18,30 @@
 #define FULL_CYCLE	1250 //in nsec (WS2812 1250, UCS - 2500)
 
 /**
+ * @brief bit length of the smart LED.
+ *
+ */
+enum WS_BitWidth
+{
+	WS_4_BIT = 0x01,
+	WS_8_BIT = 0x02
+};
+
+/**
+ * @brief enum for colors positions (RGB, RBG...)
+ *
+ */
+enum WS_ColorPosition
+{
+	WS_RGB,
+	WS_RBG,
+	WS_GRB,
+	WS_GBR,
+	WS_BRG,
+	WS_BGR
+};
+
+/**
  * @brief Initializing struct.
  * 
  */
@@ -31,6 +55,8 @@ struct WS_TypeDef
 	DMA_TypeDef*		ws_dma; /** set DMA* */
 	uint32_t 			ws_dma_channel; /** set LL_DMA_CHANNEL_CH* */
 	uint16_t			pixels; /** set number of pixels */
+	WS_BitWidth			bit_width; /** bit width */
+	WS_ColorPosition	col_pos; /** colors shift */
 };
 
 /**
@@ -122,6 +148,14 @@ class WS2812Controller
 		 * 
 		 */
 		void InitDMA();
+	
+		/**
+		 * @brief Set pixel with changed pixel rightly position
+		 * @param num pixel position
+		 * @param color Color object
+		 *
+		 */
+		void Pixelize(uint8_t num, Color color);
 
 		WS_TypeDef ws; /** WS_TypeDef object */
 		uint16_t* bittime_stream; /** stream to DMA. COntains timings for every bit */
