@@ -92,7 +92,7 @@ void WS2812Controller::InitTIM()
 	tim.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
 	tim.CounterMode = LL_TIM_COUNTERDIRECTION_UP;
 	tim.Prescaler = 0;
-	tim.RepetitionCounter = 1;
+	tim.RepetitionCounter = 0;
 	LL_TIM_Init(ws.ws_tim,&tim);
 	
 	/** Initialize PWM as PWM1 */
