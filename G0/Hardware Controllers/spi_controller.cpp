@@ -57,18 +57,9 @@ void SPIController::InitSPI()
 }
 //
 
-void SPIController::Transmit(uint8_t byte)
+uint8_t SPIController::Transmit(uint8_t byte)
 {
 	LL_SPI_TransmitData8(spi.spi,byte);
-	while(!LL_SPI_IsActiveFlag_RXNE(spi.spi)) asm("NOP");
-	LL_SPI_ReceiveData8(spi.spi);
-}
-//
-
-uint8_t SPIController::Receive()
-{
-	
-	LL_SPI_TransmitData8(spi.spi,0xFF);
 	while(!LL_SPI_IsActiveFlag_RXNE(spi.spi)) asm("NOP");
 	return LL_SPI_ReceiveData8(spi.spi);
 }
