@@ -123,6 +123,7 @@ bool SpiController::IsBusy()
 	}
 	else return !LL_SPI_IsActiveFlag_RXNE(core.spi);
 }
+//
 
 uint8_t SpiController::Transmit(uint8_t byte)
 {
@@ -172,5 +173,21 @@ void SpiController::Transmit(uint8_t *data, uint8_t len)
 			receive[i] = Transmit(data[i]);
 		}
 	}
+}
+//
+
+
+void SpiController::InitCS(GPIO_TypeDef* cs_gpio,uint32_t cs_pin)
+{
+	LL_GPIO_SetOutputPin(cs_gpio,cs_pin);
+	LL_GPIO_InitTypeDef gpio;
+	gpio.Mode = LL_GPIO_MODE_OUTPUT;
+	gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	gpio.Pin = cs_pin;
+	gpio.Pull = LL_GPIO_PULL_NO;
+	gpio.Speed = LL_GPIO_SPEED_FREQ_MEDIUM;
+	gpio.Alternate = 0;
+	LL_GPIO_Init(cs_gpio,&gpio);
+	LL_GPIO_SetOutputPin(cs_gpio,cs_pin);
 }
 //

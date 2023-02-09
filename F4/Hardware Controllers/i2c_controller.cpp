@@ -94,6 +94,9 @@ void I2CController::InitTIM()
 
 I2C_RESULT I2CController::WriteBytes(uint8_t addr,uint8_t* bytes,uint8_t len)
 {
+	/*Clear STOP IS ACTIVE ERROR */
+	if(i2c.i2c->CR1 & I2C_CR1_STOP_Msk) i2c.i2c->CR1 &= ~(I2C_CR1_STOP_Msk);
+	
 	/*ADDR*/
 	addr = addr<<1;
 	if(LL_I2C_IsActiveFlag_STOP(i2c.i2c)) LL_I2C_ClearFlag_STOP(i2c.i2c);
@@ -151,6 +154,9 @@ I2C_RESULT I2CController::WriteBytes(uint8_t addr,uint8_t* bytes,uint8_t len)
 
 I2C_RESULT I2CController::ReadBytes(uint8_t addr,uint8_t len)
 {
+	/*Clear STOP IS ACTIVE ERROR */
+	if(i2c.i2c->CR1 & I2C_CR1_STOP_Msk) i2c.i2c->CR1 &= ~(I2C_CR1_STOP_Msk);
+	
 	addr = 0x01 | (addr<<1);
 	LL_I2C_ClearFlag_STOP(i2c.i2c);
 	LL_I2C_ClearFlag_ADDR(i2c.i2c);
@@ -197,6 +203,9 @@ I2C_RESULT I2CController::ReadBytes(uint8_t addr,uint8_t len)
 
 I2C_RESULT I2CController::TransceiveBytes(uint8_t addr,uint8_t* s_bytes, uint8_t s_len, uint8_t r_len)
 {
+	/*Clear STOP IS ACTIVE ERROR */
+	if(i2c.i2c->CR1 & I2C_CR1_STOP_Msk) i2c.i2c->CR1 &= ~(I2C_CR1_STOP_Msk);
+	
 	/*ADDR*/
 	addr = addr<<1;
 	LL_I2C_ClearFlag_STOP(i2c.i2c);
@@ -296,7 +305,8 @@ I2C_RESULT I2CController::TransceiveBytes(uint8_t addr,uint8_t* s_bytes, uint8_t
 
 I2C_RESULT I2CController::ReadRegister(uint8_t addr, uint8_t reg, uint8_t len)
 {
-	
+	/*Clear STOP IS ACTIVE ERROR */
+	if(i2c.i2c->CR1 & I2C_CR1_STOP_Msk) i2c.i2c->CR1 &= ~(I2C_CR1_STOP_Msk);
 	/*ADDR*/
 	addr = addr<<1;
 	LL_I2C_ClearFlag_STOP(i2c.i2c);
@@ -332,6 +342,7 @@ I2C_RESULT I2CController::ReadRegister(uint8_t addr, uint8_t reg, uint8_t len)
 	
 	
 	/*RESTART*/
+	//LL_I2C_GenerateStopCondition(i2c.i2c);
 	addr |= 0x01;
 	if(len == 1) LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_NACK);
 	else LL_I2C_AcknowledgeNextData(i2c.i2c,LL_I2C_ACK);
@@ -375,6 +386,8 @@ I2C_RESULT I2CController::ReadRegister(uint8_t addr, uint8_t reg, uint8_t len)
 
 I2C_RESULT I2CController::WriteRegister(uint8_t addr, uint8_t reg, uint8_t* bytes, uint8_t len)
 {
+	/*Clear STOP IS ACTIVE ERROR */
+	if(i2c.i2c->CR1 & I2C_CR1_STOP_Msk) i2c.i2c->CR1 &= ~(I2C_CR1_STOP_Msk);
 	
 	/*ADDR*/
 	addr = addr<<1;

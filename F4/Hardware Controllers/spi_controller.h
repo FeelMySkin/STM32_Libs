@@ -30,6 +30,7 @@ class SpiController
 		uint8_t Transmit(uint8_t);
 		void Transmit(uint8_t* data, uint8_t len);
 		bool IsBusy();
+		void InitCS(GPIO_TypeDef* gpio,uint32_t cs_pin);
 		uint8_t  receive[128];
 		
 	
