@@ -23,8 +23,7 @@ class SPIController
 	public:
 		SPIController();
 		void Init(SPI_Init);
-		void Transmit(uint8_t byte);
-		uint8_t Receive();
+		uint8_t Transmit(uint8_t byte);
 	
 	private:
 		void InitGPIO();
