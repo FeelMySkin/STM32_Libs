@@ -1033,3 +1033,8 @@ void GSM_Controller::SetBaud(uint32_t baud)
 	//InitUSART();
 }
 //
+
+void GSM_Controller::Call(const char *num)
+{
+	Send(num);
+}

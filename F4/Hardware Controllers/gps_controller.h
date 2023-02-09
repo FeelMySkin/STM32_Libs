@@ -12,6 +12,8 @@
 #ifndef GPS_CONTROLLER_H
 #define GPS_CONTROLLER_H
 
+#define GPS_ENABLE
+
 #include "periph_functions.h"
 #include "help_functions.h"
 #include "usart_controller.h"

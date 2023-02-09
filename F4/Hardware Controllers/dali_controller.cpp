@@ -259,7 +259,7 @@ void DaliController::ReadData()
 	}*/
 	
 	/**Set halfbit time */
-	uint16_t baud = 417;
+	uint16_t baud = (1000000/DALI_BAUDS[0])/2;
 	
 	/**For every received pulse */
 	for(int i = 0;i<recv_cnt;++i)

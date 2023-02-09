@@ -74,6 +74,7 @@ class GSM_Controller
 		TIME_DATE GetSyncTime();
 		TIME_DATE GetTime();
 		void SaveTime(TIME_DATE time);
+		void Call(const char *number);
 		uint32_t GetMessageLength();
 	
 		SMS sms;
