@@ -40,7 +40,7 @@ void SPIController::InitGPIO()
 void SPIController::InitSPI()
 {
 	LL_SPI_InitTypeDef spi_ini;
-	spi_ini.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV256;
+	spi_ini.BaudRate = spi.baudrate_prescaler;
 	spi_ini.BitOrder = LL_SPI_MSB_FIRST;
 	spi_ini.ClockPhase = LL_SPI_PHASE_1EDGE;
 	spi_ini.ClockPolarity = LL_SPI_POLARITY_LOW;
