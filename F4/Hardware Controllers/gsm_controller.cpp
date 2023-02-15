@@ -21,14 +21,14 @@ void GSM_Controller::Send()
 	uint16_t timeout = 0;
 	while(!usart->IsSent() && timeout<=1500)
 	{		
-		osDelay(1);
+		vTaskDelay(1);
 		timeout++;
 	}
 	
 	//LL_DMA_DisableStream(gsm.tx_dma,gsm.tx_dma_stream);
 	//ClearDmaTCFlag(gsm.tx_dma,gsm.tx_dma_stream);
 	
-	osDelay(5);
+	vTaskDelay(5);
 	
 }
 //
@@ -62,7 +62,7 @@ void GSM_Controller::SendToServer(uint8_t* send, uint32_t len)
 		Send("AT+CIPSEND=");
 		Send(snd);
 		Send("\r");
-		osDelay(200);
+		vTaskDelay(200);
 	}
 	
 	usart->Send(send, len);
@@ -142,10 +142,10 @@ void GSM_Controller::SendSMS(SMS send_sms)
 	sprintf(addr,"%d",(curr_position-1));
 	Send(addr,sprintf(addr,"%d",(curr_position-1)));
 	Send('\r');
-	osDelay(500);
+	vTaskDelay(500);
 	Send(gsm_to_send,(curr_position*2));
 	Send(0x1A);
-	osDelay(2000);
+	vTaskDelay(2000);
 	SetMode(ret);
 	//free(real_num);
 }
@@ -177,13 +177,13 @@ bool GSM_Controller::CheckSMS()
 	{
 		WaitMessage(true,1);
 		Send("AT+CMGL=4\r",10);
-		osDelay(100);
+		vTaskDelay(100);
 	}
 	else
 	{
 		WaitMessage(true,1);
 		Send("AT+EMGL=4\r");
-		osDelay(500);
+		vTaskDelay(500);
 	}
 	
 	if(!ReadAnswer()) return false;
@@ -202,7 +202,7 @@ bool GSM_Controller::CheckSMS()
 		Send("AT+CMGR=");
 		Send(answer[7]);
 		Send('\r');
-		osDelay(200);
+		vTaskDelay(200);
 		ReadAnswer();
 	}
 	
@@ -386,11 +386,11 @@ bool GSM_Controller::CheckSMS()
 		}
 		
 		if(sms.number[0] == '+') sms.number_length+=1;
-		osDelay(100);
+		vTaskDelay(100);
 		Send("AT+CMGD=",8);
 		Send(index,index_len);
 		Send('\r');
-		osDelay(100);
+		vTaskDelay(100);
 	}
 	WaitMessage(true,1);
 	SetMode(ret);
@@ -409,20 +409,20 @@ bool GSM_Controller::SetMode(GSM_MODE new_mode)
 	if(mode == new_mode || gsm_type == GSM_TYPE_LYNQ_L307E) return true;
 	else if(new_mode == GSM_AT_MODE)
 	{
-		osDelay(1100);
+		vTaskDelay(1100);
 		WaitMessage(true,1);
 		Send("+++",3);
 		WaitMessage(true,1);
-		osDelay(1100);
+		vTaskDelay(1100);
 		ReadAnswer();
 		Send('\r');
-		osDelay(100);
+		vTaskDelay(100);
 	}
 	else if(new_mode == GSM_ONLINE_MODE)
 	{
 		WaitMessage(true,10);
 		Send("ATO\r",5);
-		osDelay(100);
+		vTaskDelay(100);
 		ReadAnswer();
 		if(ComparePartStrings(answer,"ERROR") || ComparePartStrings(answer,"NO CARRIER"))
 		{
@@ -442,8 +442,8 @@ void GSM_Controller::PowerDown()
 	SetMode(GSM_AT_MODE);
 	WaitMessage(true,1);
 	Send("AT+CPOWD=1\r",11);
-	osDelay(1000);
-	osDelay(500);
+	vTaskDelay(1000);
+	vTaskDelay(500);
 }
 //
 
@@ -459,7 +459,7 @@ void GSM_Controller::Reset()
 bool GSM_Controller::CheckModem()
 {
 	Send("AT\r\n",4);
-	osDelay(100);
+	vTaskDelay(100);
 	while(ReadAnswer(false))
 	{
 		if(ComparePartStrings(answer,"OK") || ComparePartStrings(answer,"AT"))
@@ -507,7 +507,7 @@ bool GSM_Controller::CheckNetwork()
 {
 	WaitMessage(true,1);
 	Send("AT+CREG?\r",9); 
-	osDelay(100);
+	vTaskDelay(100);
 	if(!ReadAnswer())
 	{	
 		WaitMessage(true,1);
@@ -537,17 +537,17 @@ bool GSM_Controller::CheckNetwork()
 void GSM_Controller::SetupModem()
 {	
 	
-	//osDelay(1200);
+	//vTaskDelay(1200);
 	//Config GSM Module
 	Send("ATE0\r"); //Disable ECHO, all modules understand
-	osDelay(800);
+	vTaskDelay(800);
 	uint8_t ptr = 0;
 	
 	//Understand GSM module type
 	WaitMessage(true,1);
 	while(gsm_type == GSM_TYPE_NO_TYPE)
 	{
-		osDelay(1000);
+		vTaskDelay(1000);
 		Send("ATI\r");
 		while(ReadAnswer())
 		{	
@@ -570,11 +570,11 @@ void GSM_Controller::SetupModem()
 	}
 	
 	WaitMessage(true,1);
-	osDelay(200);
+	vTaskDelay(200);
 	Send("AT+CNMI=2,0,0,0,0\r"); //New SMS Indication, disable event. All Modules
-	osDelay(200);
+	vTaskDelay(200);
 	Send("AT+CSCLK=0\r",11); //Disable Slow Clock (No Sleep Mode). All Modules
-	osDelay(200);
+	vTaskDelay(200);
 	
 	if(gsm_type == GSM_TYPE_LYNQ_L307E)
 	{
@@ -583,7 +583,7 @@ void GSM_Controller::SetupModem()
 		for(int i = 0;i<50;++i)
 		{
 			
-			osDelay(1000);
+			vTaskDelay(1000);
 			ReadAnswer();
 			if(ComparePartStrings(answer,"TCPIP") && strlen(answer) != 0)
 			{
@@ -591,23 +591,23 @@ void GSM_Controller::SetupModem()
 			}
 			if(i >=49) NVIC_SystemReset();
 		}
-		osDelay(2000);
+		vTaskDelay(2000);
 		Send("AT+ESIMS=0\r");
-		osDelay(800);
+		vTaskDelay(800);
 		Send("AT+EIND=0\r");
-		osDelay(800);
+		vTaskDelay(800);
 		Send("AT+CIPRXGET?\r");
-		osDelay(800);
+		vTaskDelay(800);
 	}
 	
 	if(gsm_type == GSM_TYPE_SIMCOM_A7670 || gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+IPR=0\r",9); //Set baud rate, SIMCom only, 0 - autobaud
-	osDelay(200);
+	vTaskDelay(200);
 	if(gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+GSMBUSY=1\r",13); // Disable all in-calls. ONLY Sim800
-	osDelay(200);
+	vTaskDelay(200);
 	if(gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CBAND=ALL_BAND\r",18); //Set Operator Band. ONLY Sim800
-	osDelay(200);
+	vTaskDelay(200);
 	Send("AT&W\r",5); //Save
-	osDelay(200);
+	vTaskDelay(200);
 }
 //
 
@@ -618,7 +618,7 @@ bool GSM_Controller::CheckSim()
 	if(gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CSMINS?\r",11);
 	else if(gsm_type == GSM_TYPE_SIMCOM_A7670) Send("AT+CICCID\r",11);
 	else if(gsm_type == GSM_TYPE_LYNQ_L307E) Send("AT+ESIMS?\r",11);
-	osDelay(200);
+	vTaskDelay(200);
 	if(!ReadAnswer())
 	{	
 		WaitMessage(true,1);
@@ -668,7 +668,7 @@ bool GSM_Controller::WaitMessage(bool clear,uint32_t timeout)
 	while(buf_len != usart->Length() && usart->Length() != 0 && timeout--)
 	{
 		buf_len = usart->Length();
-		osDelay(100);
+		vTaskDelay(100);
 	}
 	if(clear)usart->ClearBuffer();
 	if(timeout == 0) return false;
@@ -684,7 +684,7 @@ uint32_t GSM_Controller::GetMessageLength()
 	{
 		WaitMessage(true,1);
 		Send("AT+CIPRXGET=2,512\r");
-		osDelay(200);
+		vTaskDelay(200);
 		if(ReadAnswer(true))
 		{
 			if(!ComparePartStrings(answer,"+CIPRXGET")) r_len = 0;
@@ -750,11 +750,11 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 		if(GetLengthToSymbol(conn_setup.access_point,0) > 0) Send(conn_setup.access_point,GetLengthToSymbol(conn_setup.access_point,0));
 		Send("\"\r",2);
 		
-		osDelay(200);
+		vTaskDelay(200);
 		Send("AT+CIPMUX=0\r");
-		osDelay(200);
+		vTaskDelay(200);
 		Send("AT+CIICR\r");
-		osDelay(200);
+		vTaskDelay(200);
 		Send("AT+CGDATA=\"M-MBIM\",1,1\r");
 		
 	}
@@ -779,28 +779,28 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 		}
 		else Send("0\r");
 	}
-	osDelay(200);
+	vTaskDelay(200);
 	if(!ReadAnswer()) return;
 	
-	osDelay(100);
+	vTaskDelay(100);
 	/*Enable transparent mode.*/
 	if(gsm_type == GSM_TYPE_SIMCOM_A7670 || gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CIPMODE=1\r",13);
 	
-	osDelay(100);
+	vTaskDelay(100);
 	/*Configure transparent mode.*/
 	if(/*gsm_type == GSM_TYPE_SIMCOM_A7670 || */gsm_type == GSM_TYPE_SIMCOM_SIM800) Send("AT+CIPCCFG=3,2,100,1,0,50,20\r",29);
-	osDelay(100);
+	vTaskDelay(100);
 	Send("AT+CGATT=1\r",11);
-	osDelay(100);
+	vTaskDelay(100);
 	while(ReadAnswer())
 	{
-		osDelay(100);
+		vTaskDelay(100);
 	}
 	
 	for(int i = 0;i<30;++i)
 	{
 		Send("AT+CGREG?\r",10);
-		osDelay(500);
+		vTaskDelay(500);
 		WaitMessage(false,10);
 		while(ReadAnswer())
 		{
@@ -830,7 +830,7 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 		Send("\",\"",3);
 		if(GetLengthToSymbol(conn_setup.port1,0) > 0) Send(conn_setup.port1,GetLengthToSymbol(conn_setup.port1,0));
 		Send("\"\r",2);
-		osDelay(200);
+		vTaskDelay(200);
 	}
 	else if (gsm_type == GSM_TYPE_SIMCOM_A7670)
 	{
@@ -840,7 +840,7 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 		Send("\",\"",3);
 		if(GetLengthToSymbol(conn_setup.port1,0) > 0) Send(conn_setup.port1,GetLengthToSymbol(conn_setup.port1,0));
 		Send("\"\r",2);
-		osDelay(200);
+		vTaskDelay(200);
 	}
 	ReadAnswer();
 	
@@ -849,7 +849,7 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 		
 		for(uint32_t i = 0;i<100*conn_setup.timeout;++i)
 		{
-			osDelay(500);
+			vTaskDelay(500);
 			if(ReadAnswer())
 			{
 				if(ComparePartStrings(answer,"CONNECT") || ComparePartStrings(answer,"+RECEIVE"))
@@ -860,7 +860,7 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 					if(gsm_type == GSM_TYPE_LYNQ_L307E)
 					{
 						Send("AT+CIPRXGET=1\r");
-						osDelay(100);
+						vTaskDelay(100);
 						WaitMessage(true,1);
 					}
 					
@@ -898,7 +898,7 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 				stream_mode = true;
 				return true;
 			}*/
-			osDelay(tick_1ms);
+			vTaskDelay(tick_1ms);
 		}
 	}
 	
@@ -911,13 +911,13 @@ void GSM_Controller::Disconnect()
 {
 	SetMode(GSM_AT_MODE);
 	Send('\r');
-	osDelay(500);
+	vTaskDelay(500);
 	WaitMessage(true,1);
 	
 	Send("AT+CIPSHUT\r",11);
-	osDelay(100);
+	vTaskDelay(100);
 	Send("AT+CGATT=0\r",11);
-	osDelay(100);
+	vTaskDelay(100);
 	WaitMessage(false,10);
 	WaitMessage(true,1);
 	
@@ -931,7 +931,7 @@ void GSM_Controller::CheckSignal()
 	SetMode(GSM_AT_MODE);
 	WaitMessage(true,1);
 	Send("AT+CSQ\r",7);
-	osDelay(500);
+	vTaskDelay(500);
 	ReadAnswer();
 	
 	uint8_t ptr = 0;
@@ -975,7 +975,7 @@ TIME_DATE GSM_Controller::GetTime()
 	for(int i = 0;i<4;++i)
 	{
 		Send("AT+CCLK?\r",9);
-		osDelay(200);
+		vTaskDelay(200);
 		if(ReadAnswer() && ComparePartStrings(answer,"+CCLK:")) break;
 		WaitMessage(true,1);
 	}
@@ -1021,7 +1021,7 @@ void GSM_Controller::SaveTime(TIME_DATE time)
 																																				time.mins,
 																																				time.secs);
 	Send(send_string,31);
-	osDelay(200);
+	vTaskDelay(200);
 	SetMode(ret);
 }
 //

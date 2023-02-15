@@ -20,7 +20,7 @@ void GPS_Controller::Init(UsartController*	usart)
 //	usart->Send(gtk);
 	/*while(!usart->IsSent())
 	{
-		osDelay(5);
+		vTaskDelay(5);
 	}*/
 	rmc.signal_level = 0;
 }
