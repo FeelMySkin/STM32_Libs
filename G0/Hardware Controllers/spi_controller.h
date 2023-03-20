@@ -15,6 +15,7 @@ struct SPI_Init
 	uint32_t spi_mosi_af;
 	uint32_t spi_sck_af;
 	SPI_TypeDef* spi;
+	uint32_t	baudrate_prescaler; // LL_SPI_BAUDRATE_PRESCALER_*
 };
 
 
