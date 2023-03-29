@@ -35,10 +35,12 @@ enum DALI_LOGIC
  * @brief DALI RX Working type
  * 
  */
-enum DALI_TYPE
+enum DALI_WORK_TYPE
 {
-	DALI_IC, /** TIM and IC based work */
-	DALI_EXTI /** External Interrupt based work */
+	DALI_WORK_IC, /** TIM and IC based work */
+	DALI_WORK_EXTI, /** External Interrupt based work */
+	DALI_WORK_SAMPLING_IC, /** TIM and IC based work for sending and sampling for receive */
+	DALI_WORK_SAMPLING_EXTI, /** External Interrupt based work for sending and sampling for receive */
 };
 
 /**
@@ -69,7 +71,7 @@ struct DALI_InitTypeDef
 	TIM_TypeDef*		kz_tim; /** Set another TIM* to check if long zero */
 	uint32_t 			callback_line; /** Set LL_EXTI_LINE_* for receive callback (if needed) */
 	DALI_LOGIC			logic:2; /** Set DALI_LOGIC */
-	DALI_TYPE			type:2; /** Set DALI Type */
+	DALI_WORK_TYPE		work_type:2; /** Set DALI Type */
 };
 
 /**
