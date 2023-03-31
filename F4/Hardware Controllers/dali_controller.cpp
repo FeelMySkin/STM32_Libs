@@ -84,7 +84,7 @@ void DaliController::StartReceiving()
 	state = DALI_STATE_RECEIVING;
 	recv_cnt = 0;
 	recv_buf[0] = 1;
-	curr_bit = dali.logic==DALI_LOGIC_POSITIVE?0:1;
+	curr_bit = dali.rx_logic==DALI_LOGIC_POSITIVE?0:1;
 	/** Else Enables RX EXTI IRQ */
 
 }
@@ -101,7 +101,7 @@ bool DaliController::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay)
 	for(int i = 0;i<n_bits+1;++i) bits[i] = (to_send>>(n_bits-i))&1;
 	send_len = 0;
 	
-	uint8_t halfbit = (1000000/DALI_BAUD)/2;
+	uint16_t halfbit = (1000000/DALI_BAUD)/2;
 	
 	for(int i = 0;i<n_bits+1;++i)
 	{
@@ -283,7 +283,6 @@ void DaliController::Process()
 			/**Start sending if delayed ticked */
 			state = DALI_STATE_IDLE;
 			StartSending();
-			return;
 		break;
 
 		case DALI_STATE_RECEIVING:
@@ -302,7 +301,7 @@ void DaliController::ProcessCounter()
 	uint8_t bit_state = (LL_GPIO_ReadInputPort(dali.dali_rx_gpio) & dali.dali_rx_pin)==0?0:1;
 	if(state == DALI_STATE_IDLE)
 	{
-		if((dali.logic == DALI_LOGIC_NEGATIVE && bit_state == 1) || (dali.logic == DALI_LOGIC_POSITIVE && bit_state == 0))
+		if((dali.rx_logic == DALI_LOGIC_NEGATIVE && bit_state == 1) || (dali.rx_logic == DALI_LOGIC_POSITIVE && bit_state == 0))
 		{
 			StartReceiving();
 		}
@@ -316,7 +315,7 @@ void DaliController::ProcessCounter()
 			recv_cnt++;
 			recv_buf[recv_cnt] = 1;
 		}
-		if(recv_buf[recv_cnt]>=30)
+		if(recv_buf[recv_cnt]>=3*DALI_SAMPLINGS)
 		{
 			recv_cnt++;
 			state = DALI_STATE_IDLE;
@@ -372,7 +371,7 @@ void DaliController::EnableRecvInterrupt(bool state)
 
 void DaliController::SetHigh()
 {
-	switch(dali.logic)
+	switch(dali.tx_logic)
 	{
 		case DALI_LOGIC_NEGATIVE:
 			LL_GPIO_ResetOutputPin(dali.dali_tx_gpio,dali.dali_tx_pin);
@@ -387,7 +386,7 @@ void DaliController::SetHigh()
 
 void DaliController::SetLow()
 {
-	switch(dali.logic)
+	switch(dali.tx_logic)
 	{
 		case DALI_LOGIC_NEGATIVE:
 			LL_GPIO_SetOutputPin(dali.dali_tx_gpio,dali.dali_tx_pin);
@@ -403,7 +402,7 @@ void DaliController::SetLow()
 void DaliController::CheckKZ()
 {
 	/**If RX in LOW state - count, else reset counter */
-	switch(dali.logic)
+	switch(dali.rx_logic)
 	{
 		case DALI_LOGIC_NEGATIVE:
 			if(LL_GPIO_ReadInputPort(dali.dali_rx_gpio)&dali.dali_rx_pin)

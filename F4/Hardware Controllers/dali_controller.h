@@ -15,8 +15,8 @@
 
 #include "periph_functions.h"
 
-#define DALI_HYST 			3 /** HYSTERESIS in timings */
-#define DALI_SAMPLINGS		8 /**Samplings of receiving signal*/
+#define DALI_HYST 			7 /** HYSTERESIS in timings */
+#define DALI_SAMPLINGS		16 /**Samplings of receiving signal*/
 #define DEBUG_RECEIVER /**Enables DEBUG buffer */
 #define DALI_BAUDS_COUNT	1 /** Number of BAUDS */
 
@@ -63,11 +63,10 @@ struct DALI_InitTypeDef
 	uint16_t 			dali_tx_pin; /** set LL_GPIO_PIN_* for TX pin */
 	uint16_t 			dali_rx_pin; /** set LL_GPIO_PIN_* for RX pin */
 	TIM_TypeDef*		dali_tim; /** Set TIM* for work */
-	uint32_t			dali_rx_ch; /** Set corresponding TIM_CH (If DALI_IC Type) */
-	uint32_t			dali_af; /** Set RX Pin LL_GPIO_AF_* for TIM* Channel (If DALI_IC Type) */
 	TIM_TypeDef*		kz_tim; /** Set another TIM* to check if long zero */
 	uint32_t 			callback_line; /** Set LL_EXTI_LINE_* for receive callback (if needed) */
-	DALI_LOGIC			logic:2; /** Set DALI_LOGIC */
+	DALI_LOGIC			tx_logic:2; /** Set DALI_LOGIC */
+	DALI_LOGIC			rx_logic:2; /** Set DALI_LOGIC */
 };
 
 /**
@@ -182,13 +181,16 @@ class DaliController
 		 * 
 		 */
 		void SetHigh();
-
+		/**
+		 * @brief Processes Samplings of TIM URQ if current state is IDLE or RECEIVING.
+		 * 
+		 */
 		void ProcessCounter();
 	
 		DALI_InitTypeDef dali; /** DALI initializer object */
 	
 		uint8_t recv_cnt; /** number of received timings on RX pin */
-		uint8_t curr_bit;
+		uint8_t curr_bit; /** Current Sampling bit*/
 		uint8_t delay_cnt; /** delay on transmit */
 		uint16_t recv_buf[80]; /** received timings on RX pin */
 	
