@@ -15,11 +15,12 @@
 
 #include "periph_functions.h"
 
-#define DALI_HYST 			200 /** HYSTERESIS in timings */
+#define DALI_HYST 			3 /** HYSTERESIS in timings */
+#define DALI_SAMPLINGS		8 /**Samplings of receiving signal*/
 #define DEBUG_RECEIVER /**Enables DEBUG buffer */
 #define DALI_BAUDS_COUNT	1 /** Number of BAUDS */
 
-const uint16_t DALI_BAUDS[DALI_BAUDS_COUNT] = {1200}; /** Some baud rates that can be used (not all of them can work) */
+#define DALI_BAUD 1200 /** Some baud rates that can be used (not all of them can work) */
 
 /**
  * @brief TX pin logic
@@ -31,16 +32,12 @@ enum DALI_LOGIC
 	DALI_LOGIC_NEGATIVE  /** GND on pin set */
 };
 
-/**
- * @brief DALI RX Working type
- * 
- */
-enum DALI_WORK_TYPE
+enum DALI_STATE_MACHINE
 {
-	DALI_WORK_IC, /** TIM and IC based work */
-	DALI_WORK_EXTI, /** External Interrupt based work */
-	DALI_WORK_SAMPLING_IC, /** TIM and IC based work for sending and sampling for receive */
-	DALI_WORK_SAMPLING_EXTI, /** External Interrupt based work for sending and sampling for receive */
+	DALI_STATE_IDLE,	/** Idle state.*/
+	DALI_STATE_SENDING, /** Data sending state*/
+	DALI_STATE_WAIT_TO_SEND, /** Delayed sending.*/
+	DALI_STATE_RECEIVING, /** Data receiving state */
 };
 
 /**
@@ -71,7 +68,6 @@ struct DALI_InitTypeDef
 	TIM_TypeDef*		kz_tim; /** Set another TIM* to check if long zero */
 	uint32_t 			callback_line; /** Set LL_EXTI_LINE_* for receive callback (if needed) */
 	DALI_LOGIC			logic:2; /** Set DALI_LOGIC */
-	DALI_WORK_TYPE		work_type:2; /** Set DALI Type */
 };
 
 /**
@@ -97,7 +93,7 @@ class DaliController
 		 * @param n_bits Number of bits (by default 8, 16, 24)
 		 * @param baud custom baudrate. Take it from DALI_BAUDS array (default 1200).
 		 */
-		void Send(uint32_t mess,uint8_t n_bits, uint16_t baud = DALI_BAUDS[0]);
+		bool Send(uint32_t mess,uint8_t n_bits);
 
 		/**
 		 * @brief DALI data sender method with delay.
@@ -108,7 +104,7 @@ class DaliController
 		 * @param delay Send delay (in us, default 5000)
 		 * @param baud custom baudrate. Take it from DALI_BAUDS array (default 1200).
 		 */
-		void SendDelayed(uint32_t mess, uint8_t n_bits, uint32_t delay = 5000, uint16_t baud = DALI_BAUDS[0]);
+		bool SendDelayed(uint32_t mess, uint8_t n_bits, uint32_t delay = 5000);
 
 		/**
 		 * @brief Process incoming data
@@ -116,7 +112,7 @@ class DaliController
 		 * @param tim_flag true - Process from TIM IRQ, false = Process from EXTI IRQ. 
 		 * Call it from TIM and (DALI_EXTI type) EXTI IRQHandler.
 		 */
-		void Process(bool tim_flag);
+		void Process();
 
 		/**
 		 * @brief Enables/Disables Receive callback
@@ -136,30 +132,19 @@ class DaliController
 		 * 
 		 */
 		void StartReceiving();
-		/**
-		 * @brief Stop listenings on RX pin
-		 * 
-		 */
-		void StopReceiving();
 
 		/**
 		 * @brief Check if Shirt circuit  (No DALI Line Voltage).
 		 * 
 		 */
 		void CheckKZ();
-
-		/**
-		 * @brief Process IC (If DALI_IC Type). 
-		 * Call it from TIM_IRQHandler.
-		 * 
-		 */
-		void ProcessIC();
 	
-		bool sending,receiving,delayed; /** is sending, is receiving, is delayed sending flags */
+		DALI_STATE_MACHINE state;
 		bool send_completed,receive_completed; /** send or receive completed flags */
 		bool kz_state; /** is short circuit flag */
 		uint32_t received; /** received message */
 		uint8_t recv_bytes; /** received message length */
+		uint16_t sampling_arr;
 		//uint16_t last_baud;
 	
 	private:
@@ -197,10 +182,13 @@ class DaliController
 		 * 
 		 */
 		void SetHigh();
+
+		void ProcessCounter();
 	
 		DALI_InitTypeDef dali; /** DALI initializer object */
 	
 		uint8_t recv_cnt; /** number of received timings on RX pin */
+		uint8_t curr_bit;
 		uint8_t delay_cnt; /** delay on transmit */
 		uint16_t recv_buf[80]; /** received timings on RX pin */
 	

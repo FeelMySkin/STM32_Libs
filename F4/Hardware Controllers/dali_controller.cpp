@@ -4,10 +4,10 @@ DaliController::DaliController()
 {
 	/** default initializers */
 	irq_en = false;
-	delayed = false;
 	kz_check = false;
 	kz_state = false;
 	kz_counter = 0;
+	state = DALI_STATE_IDLE;
 	
 	#ifdef DEBUG_RECEIVER
 		r_cnt = 0;
@@ -27,8 +27,7 @@ void DaliController::Init(DALI_InitTypeDef get)
 	dali = get;
 	InitGPIO();
 	InitTIM();
-	receiving = false;
-	sending = false;
+	state = DALI_STATE_IDLE;
 
 	/**Start Listen */
 	StartReceiving();
@@ -48,30 +47,11 @@ void DaliController::InitGPIO()
 	gpio.Pin = dali.dali_tx_pin;
 	LL_GPIO_Init(dali.dali_tx_gpio,&gpio);
 	
-	/** RX as ALTERNATE (DALI_IC) or INPUT PULL_UP (DALI_EXTI) */
-	if(dali.work_type == DALI_WORK_IC)
-	{
-		gpio.Alternate = dali.dali_af;
-		gpio.Mode = LL_GPIO_MODE_ALTERNATE;
-	}
-	else gpio.Mode = LL_GPIO_MODE_INPUT;
+	gpio.Mode = LL_GPIO_MODE_INPUT;
 	gpio.Pin = dali.dali_rx_pin;
 	LL_GPIO_Init(dali.dali_rx_gpio,&gpio);
 	SetHigh();
-	
-	/**If DALI_EXTI Enable EXTI IRQHandler on RX pins */
-	if(dali.work_type == DALI_WORK_EXTI)
-	{
-		LL_EXTI_InitTypeDef exti;
-		exti.LineCommand = ENABLE;
-		exti.Line_0_31 = GetExtiLine(dali.dali_rx_pin);
-		exti.Mode = LL_EXTI_MODE_IT;
-		exti.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
-		SetExtiSource(dali.dali_tx_gpio,GetExtiLine(dali.dali_rx_pin));
-		LL_EXTI_Init(&exti);
-		
-		EnableExtiIRQn(GetExtiLine(dali.dali_rx_pin),0);
-	}
+
 }
 //
 
@@ -80,7 +60,8 @@ void DaliController::InitTIM()
 {
 	/**Initialize main timer with 1MHz (1us) frequency */ 
 	LL_TIM_InitTypeDef tim;
-	tim.Autoreload = 3*(1000000/DALI_BAUDS[0])/2;
+	sampling_arr = (1000000/DALI_BAUD)/(2*DALI_SAMPLINGS);
+	tim.Autoreload = sampling_arr;
 	tim.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
 	tim.CounterMode = LL_TIM_COUNTERMODE_UP;
 	tim.Prescaler = SystemCoreClock/1000000-1;
@@ -88,70 +69,31 @@ void DaliController::InitTIM()
 	LL_TIM_Init(dali.dali_tim,&tim);
 	
 	LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
-	 if(dali.work_type == DALI_WORK_EXTI) LL_TIM_EnableIT_UPDATE(dali.dali_tim); /**If DALI_EXTI Type enable UPDATE IRQ on TIM */
+	LL_TIM_EnableIT_UPDATE(dali.dali_tim); /**If DALI_EXTI Type enable UPDATE IRQ on TIM */
+	LL_TIM_EnableCounter(dali.dali_tim);
 	
 	/**Enable IRQHAndler on TIM* */
 	EnableTimIRQn(dali.dali_tim,0);
 	
-	/**If DALI_IC enable InputCapture on both Edges and Enable IC */
-	if(dali.work_type == DALI_WORK_IC)
-	{
-		LL_TIM_IC_InitTypeDef ic;
-		ic.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
-		ic.ICFilter = LL_TIM_IC_FILTER_FDIV1;
-		ic.ICPolarity = LL_TIM_IC_POLARITY_BOTHEDGE;
-		ic.ICPrescaler = LL_TIM_ICPSC_DIV1;
-		LL_TIM_IC_Init(dali.dali_tim,dali.dali_rx_ch,&ic);
-		LL_TIM_EnableCounter(dali.dali_tim);
-	}
-	
-	
-
 }
 //
 
+//TODO: Change receive logic.
 void DaliController::StartReceiving()
-{	
-	/**If DALI_IC Disables Update IRQ, restarts counter, sets maximum autoreload and enables CC  IRQ */
-	if(dali.work_type == DALI_WORK_IC)
-	{
-		ClearIcFlag(dali.dali_tim,dali.dali_rx_ch);
-		LL_TIM_DisableIT_UPDATE(dali.dali_tim);
-		LL_TIM_SetCounter(dali.dali_tim,0);
-		LL_TIM_SetAutoReload(dali.dali_tim,3*417);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH1) LL_TIM_EnableIT_CC1(dali.dali_tim);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH2) LL_TIM_EnableIT_CC2(dali.dali_tim);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH3) LL_TIM_EnableIT_CC3(dali.dali_tim);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH4) LL_TIM_EnableIT_CC4(dali.dali_tim);
-	}
+{
+	state = DALI_STATE_RECEIVING;
+	recv_cnt = 0;
+	recv_buf[0] = 1;
+	curr_bit = dali.logic==DALI_LOGIC_POSITIVE?0:1;
 	/** Else Enables RX EXTI IRQ */
-	else
-	{
-		LL_EXTI_ClearFlag_0_31(GetExtiLine(dali.dali_rx_pin));
-		LL_EXTI_EnableIT_0_31(GetExtiLine(dali.dali_rx_pin));
-	}
+
 }
 //
 
-void DaliController::StopReceiving()
+bool DaliController::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay)
 {
-	/**if DALI_IC Disables CC IRQ */
-	if(dali.work_type == DALI_WORK_IC)
-	{
-		LL_TIM_SetCounter(dali.dali_tim,0);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH1) LL_TIM_DisableIT_CC1(dali.dali_tim);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH2) LL_TIM_DisableIT_CC2(dali.dali_tim);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH3) LL_TIM_DisableIT_CC3(dali.dali_tim);
-		if(dali.dali_rx_ch == LL_TIM_CHANNEL_CH4) LL_TIM_DisableIT_CC4(dali.dali_tim);
-	}
-	/** else Disables RX EXTI IRQ */
-	else LL_EXTI_DisableIT_0_31(GetExtiLine(dali.dali_rx_pin));
-	
-}
-//
+	if(state == DALI_STATE_RECEIVING) return false;
 
-void DaliController::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay, uint16_t baud)
-{
 	/** See Send() method */
 	send_completed = false;
 	uint32_t to_send =(1<<(n_bits)) | mess;
@@ -159,7 +101,7 @@ void DaliController::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay, u
 	for(int i = 0;i<n_bits+1;++i) bits[i] = (to_send>>(n_bits-i))&1;
 	send_len = 0;
 	
-	uint8_t halfbit = (1000000/baud)/2;
+	uint8_t halfbit = (1000000/DALI_BAUD)/2;
 	
 	for(int i = 0;i<n_bits+1;++i)
 	{
@@ -182,25 +124,21 @@ void DaliController::SendDelayed(uint32_t mess,uint8_t n_bits, uint32_t delay, u
 	}
 	
 	/** set delayed flag */
-	delayed = true;
 	
-	StopReceiving();
-	if(receiving)
-	{
-		StartReceiving();
-		return;
-	}
+	state = DALI_STATE_WAIT_TO_SEND;
 	
 	/** Set delay to TIM */
 	LL_TIM_DisableCounter(dali.dali_tim);
 	LL_TIM_SetCounter(dali.dali_tim,0);
 	LL_TIM_SetAutoReload(dali.dali_tim,delay);
 	LL_TIM_EnableCounter(dali.dali_tim);
+	return true;
 }
 //
 
-void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
+bool DaliController::Send(uint32_t mess,uint8_t n_bits)
 {
+	if(state == DALI_STATE_RECEIVING) return false;
 	/**Adds start bit and increase n_bits by 1 */
 	send_completed = false;
 	uint32_t to_send =(1<<(n_bits)) | mess;
@@ -212,7 +150,7 @@ void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
 	send_len = 0;
 	
 	/** Get halfbit timing (Manchester encoding) */
-	uint16_t halfbit = (1000000/baud)/2;
+	uint16_t halfbit = (1000000/DALI_BAUD)/2;
 	
 	/** For every bit */
 	for(int i = 0;i<n_bits;++i)
@@ -240,6 +178,7 @@ void DaliController::Send(uint32_t mess,uint8_t n_bits, uint16_t baud)
 	
 	/**Send */
 	StartSending();
+	return true;
 }
 //
 
@@ -259,18 +198,18 @@ void DaliController::ReadData()
 	}*/
 	
 	/**Set halfbit time */
-	uint16_t baud = (1000000/DALI_BAUDS[0])/2;
+	uint16_t baud = DALI_SAMPLINGS;
 	
 	/**For every received pulse */
 	for(int i = 0;i<recv_cnt;++i)
 	{
 		/**if time of pulse around halfbit time - set received buffer to PULSE_HALFBIT */
 		if(recv_buf[i]>=baud-DALI_HYST && recv_buf[i]<=baud+DALI_HYST) recv_buf[i] = DALI_PULSE_HALFBIT;
-		/**if time of pulse around full bit - set received buffer to 2 */
+		/**if time of pulse around full bit - set received buffer to DALI_PULSE_FULLBIT */
 		else if(recv_buf[i]>=2*baud-DALI_HYST && recv_buf[i]<=2*baud+DALI_HYST) recv_buf[i] = DALI_PULSE_FULLBIT;
-		/**if received stop signal (long HIGH level) - set recv_buf to 4 */
-		else if(recv_buf[i]>=4*baud-DALI_HYST || recv_buf[i]<=30) recv_buf[i] = DALI_PULSE_STOP;
-		/**Else set recv_buf to 3 */
+		/**if received stop signal (long HIGH level) - set recv_buf to DALI_PULSE_STOP */
+		else if(recv_buf[i]>=3*baud-DALI_HYST || recv_buf[i]<=30) recv_buf[i] = DALI_PULSE_STOP;
+		/**Else set recv_buf to DALI_PULSE_ERROR */
 		else recv_buf[i] = DALI_PULSE_ERROR;
 	}
 	/**If there is less than 5 pulses - error (return) */
@@ -317,132 +256,85 @@ void DaliController::ReadData()
 }
 //
 
-void DaliController::ProcessIC()
+void DaliController::Process()
 {
-	/**If receive in process get current time passed and restart counter */
-	if(receiving)
-	{
-		if(LL_TIM_GetCounter(dali.dali_tim) <=30) return; /** For noise only */
-		recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
-		LL_TIM_DisableCounter(dali.dali_tim);
-		LL_TIM_SetCounter(dali.dali_tim,0);
-		LL_TIM_EnableCounter(dali.dali_tim);
-		recv_cnt++;
 
-	}
-	/**If not receiving and not sending - start reciving (received first bit) */
-	if(!receiving && !sending)
+	switch(state)
 	{
-		receive_completed = false;
-		receiving = true;
-		LL_TIM_SetAutoReload(dali.dali_tim,4*DALI_BAUDS[0]); /** 2 stop bits */
-		LL_TIM_SetCounter(dali.dali_tim,0);
-		LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
-		LL_TIM_EnableIT_UPDATE(dali.dali_tim);
-		recv_cnt = 0;
-	}
-}
-//
-
-void DaliController::Process(bool tim_flag)
-{
-	if(sending)
-	{
-		/**If all bits send (all pulses generated) */
-		if(send_cnt == send_len)
-		{ 
-			/**Disable counter for DALI_EXTI */
-			if(dali.work_type == DALI_WORK_EXTI) LL_TIM_DisableCounter(dali.dali_tim);
-			/**Set TX to HIGH, set all flags and start listening */
-			SetHigh();
-			sending = false;
-			send_completed = true;
-			StartReceiving();
-			return;
-		}
-		/**If not all pulses sent - togle TX pin and set next pulse time */
-		LL_GPIO_TogglePin(dali.dali_tx_gpio,dali.dali_tx_pin);
-		LL_TIM_SetAutoReload(dali.dali_tim,send_buf[send_cnt]);
-		send_cnt++;
-	}
-	
-	if(receiving)
-	{
-		/**For DALI_IC if UPDATE IRQ happened - stop receiving and decode (as 2 stop bits counted) */
-		if(dali.work_type == DALI_WORK_IC)
-		{
-			recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
-			LL_TIM_DisableIT_UPDATE(dali.dali_tim);
-			recv_cnt++;
-			receiving = false;
-			ReadData();
-			return;
-		}
-		else
-		{
-			/** If TIM UPDATE IRQ not happened - get current TIM counter and restart it */
-			if(!tim_flag)
-			{
-				if(LL_TIM_GetCounter(dali.dali_tim) <=30) return;
-				recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
-				LL_TIM_DisableCounter(dali.dali_tim);
+		case DALI_STATE_SENDING:
+			/**If all bits send (all pulses generated) */
+			if(send_cnt == send_len)
+			{ 
+				/**Set TX to HIGH, set all flags and start listening */
+				SetHigh();
+				state = DALI_STATE_IDLE;
+				send_completed = true;
 				LL_TIM_SetCounter(dali.dali_tim,0);
-				LL_TIM_EnableCounter(dali.dali_tim);
-				recv_cnt++;
-			}
-			/** Else decode */
-			else
-			{
-				recv_buf[recv_cnt] = LL_TIM_GetCounter(dali.dali_tim);
-				LL_TIM_DisableCounter(dali.dali_tim);
-				recv_cnt++;
-				receiving = false;
-				ReadData();
+				LL_TIM_SetAutoReload(dali.dali_tim,sampling_arr);
 				return;
 			}
-		}
+			/**If not all pulses sent - togle TX pin and set next pulse time */
+			LL_GPIO_TogglePin(dali.dali_tx_gpio,dali.dali_tx_pin);
+			LL_TIM_SetAutoReload(dali.dali_tim,send_buf[send_cnt]);
+			send_cnt++;
+		break;
+
+		case DALI_STATE_WAIT_TO_SEND:
+			/**Start sending if delayed ticked */
+			state = DALI_STATE_IDLE;
+			StartSending();
+			return;
+		break;
+
+		case DALI_STATE_RECEIVING:
+		case DALI_STATE_IDLE:
+			/**Check if switched to zero. */
+			ProcessCounter();
+			break;
+
 	}
-	
-	
-	/**Start sending if delayed ticked */
-	if(delayed)
-	{
-		delayed = false;
-		LL_TIM_DisableCounter(dali.dali_tim);
-		StartSending();
-		return;
-	}
-	
-	/**If DALI_EXTI and EXTI IRQ happened (with no receiving and sending) - start receive */
-	if(!receiving && !sending && dali.work_type == DALI_WORK_EXTI)
-    {
-        receive_completed = false;
-        receiving = true;
-        LL_TIM_SetAutoReload(dali.dali_tim,4*417);
-        LL_TIM_SetCounter(dali.dali_tim,0);
-        LL_TIM_EnableCounter(dali.dali_tim);
-        recv_cnt = 0;
-    }
 	
 }
 //
+
+void DaliController::ProcessCounter()
+{
+	uint8_t bit_state = (LL_GPIO_ReadInputPort(dali.dali_rx_gpio) & dali.dali_rx_pin)==0?0:1;
+	if(state == DALI_STATE_IDLE)
+	{
+		if((dali.logic == DALI_LOGIC_NEGATIVE && bit_state == 1) || (dali.logic == DALI_LOGIC_POSITIVE && bit_state == 0))
+		{
+			StartReceiving();
+		}
+	}
+	else if(state == DALI_STATE_RECEIVING)
+	{
+		if(bit_state == curr_bit) recv_buf[recv_cnt]++;
+		else
+		{
+			curr_bit = bit_state;
+			recv_cnt++;
+			recv_buf[recv_cnt] = 1;
+		}
+		if(recv_buf[recv_cnt]>=30)
+		{
+			recv_cnt++;
+			state = DALI_STATE_IDLE;
+			ReadData();
+		}
+	}
+}
 
 void DaliController::StartSending()
 {
 	/**If not receiving - proceed */
-	if(receiving) return;
-	StopReceiving();
+	if(state == DALI_STATE_RECEIVING) return;
 	
 	/**Set first pulse time for UPDATE IRQ, Enable UPDATE IRQ (for DALI_IC) and Enable Counter (for DALI_EXTI) */
 	send_cnt = 1;
-	sending = true;
+	state = DALI_STATE_SENDING;
 	LL_TIM_SetCounter(dali.dali_tim,0);
 	LL_TIM_SetAutoReload(dali.dali_tim,send_buf[0]);
-	if(dali.work_type == DALI_WORK_IC) 
-	{
-		LL_TIM_ClearFlag_UPDATE(dali.dali_tim);
-		LL_TIM_EnableIT_UPDATE(dali.dali_tim);
-	}
 	LL_TIM_EnableCounter(dali.dali_tim);
 	/**Set TX to LOW */
 	LL_GPIO_TogglePin(dali.dali_tx_gpio,dali.dali_tx_pin);
