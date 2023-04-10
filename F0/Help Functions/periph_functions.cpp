@@ -43,10 +43,11 @@ void SetExtiSource(GPIO_TypeDef* gpio,uint32_t exti_line)
 	if(gpio == GPIOA) syscfg_exti_source = LL_SYSCFG_EXTI_PORTA;
 	else if(gpio == GPIOB) syscfg_exti_source = LL_SYSCFG_EXTI_PORTB;
 	else if(gpio == GPIOC) syscfg_exti_source = LL_SYSCFG_EXTI_PORTC;
-	else if(gpio == GPIOD) syscfg_exti_source = LL_SYSCFG_EXTI_PORTD;
-	
+	#ifdef GPIOD
+		else if(gpio == GPIOD) syscfg_exti_source = LL_SYSCFG_EXTI_PORTD;
+	#endif
 	#ifdef GPIOE
-	else if(gpio == GPIOE) syscfg_exti_source = LL_SYSCFG_EXTI_PORTE;
+		else if(gpio == GPIOE) syscfg_exti_source = LL_SYSCFG_EXTI_PORTE;
 	#endif
 	
 	switch(exti_line)
