@@ -85,7 +85,6 @@ void ADCController::InitLines()
 	#ifdef LL_ADC_PATH_INTERNAL_VBAT
 	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0
 	#endif
-	0
 	);
 	
 	LL_ADC_StartCalibration(ADC1);
