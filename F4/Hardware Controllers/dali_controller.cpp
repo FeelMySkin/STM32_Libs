@@ -298,23 +298,32 @@ void DaliController::Process()
 
 void DaliController::ProcessCounter()
 {
+	/*Get current RX pin state*/
 	uint8_t bit_state = (LL_GPIO_ReadInputPort(dali.dali_rx_gpio) & dali.dali_rx_pin)==0?0:1;
+
+	/*If not receiving or sending*/
 	if(state == DALI_STATE_IDLE)
 	{
+		/*If Start bit get*/
 		if((dali.rx_logic == DALI_LOGIC_NEGATIVE && bit_state == 1) || (dali.rx_logic == DALI_LOGIC_POSITIVE && bit_state == 0))
 		{
+			/*Start receiving everything*/
 			StartReceiving();
 		}
 	}
+	/*IF receiving state*/
 	else if(state == DALI_STATE_RECEIVING)
 	{
+		/*if RX state not changed samples++*/
 		if(bit_state == curr_bit) recv_buf[recv_cnt]++;
 		else
 		{
+			/*Else step to next counter's array*/
 			curr_bit = bit_state;
 			recv_cnt++;
 			recv_buf[recv_cnt] = 1;
 		}
+		/*If sampled long state - Decode*/
 		if(recv_buf[recv_cnt]>=3*DALI_SAMPLINGS)
 		{
 			recv_cnt++;

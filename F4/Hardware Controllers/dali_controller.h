@@ -18,7 +18,6 @@
 #define DALI_HYST 			7 /** HYSTERESIS in timings */
 #define DALI_SAMPLINGS		16 /**Samplings of receiving signal*/
 #define DEBUG_RECEIVER /**Enables DEBUG buffer */
-#define DALI_BAUDS_COUNT	1 /** Number of BAUDS */
 
 #define DALI_BAUD 1200 /** Some baud rates that can be used (not all of them can work) */
 
@@ -90,7 +89,6 @@ class DaliController
 		 * 
 		 * @param mess message to send
 		 * @param n_bits Number of bits (by default 8, 16, 24)
-		 * @param baud custom baudrate. Take it from DALI_BAUDS array (default 1200).
 		 */
 		bool Send(uint32_t mess,uint8_t n_bits);
 
@@ -101,15 +99,13 @@ class DaliController
 		 * @param mess message to send
 		 * @param n_bits Number of bits (by default 8, 16, 24)
 		 * @param delay Send delay (in us, default 5000)
-		 * @param baud custom baudrate. Take it from DALI_BAUDS array (default 1200).
 		 */
 		bool SendDelayed(uint32_t mess, uint8_t n_bits, uint32_t delay = 5000);
 
 		/**
-		 * @brief Process incoming data
+		 * @brief Process Timer
 		 * 
-		 * @param tim_flag true - Process from TIM IRQ, false = Process from EXTI IRQ. 
-		 * Call it from TIM and (DALI_EXTI type) EXTI IRQHandler.
+		 * Call it from dali_tim.
 		 */
 		void Process();
 
