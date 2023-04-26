@@ -81,11 +81,10 @@ void ADCController::InitLines()
 	
 	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,
 	flags.voltage?LL_ADC_PATH_INTERNAL_VREFINT:0 | 
-	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0 | 
 	#ifdef LL_ADC_PATH_INTERNAL_VBAT
-	flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0
+		flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0 |
 	#endif
-	);
+	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0);
 	
 	LL_ADC_StartCalibration(ADC1);
 	while(LL_ADC_IsCalibrationOnGoing(ADC1)) asm("NOP");
