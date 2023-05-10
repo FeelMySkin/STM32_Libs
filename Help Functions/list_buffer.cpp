@@ -24,21 +24,10 @@ T& ListBuffer<T>::operator[](uint16_t idx)
 template <class T>
 void ListBuffer<T>::Add(T n)
 {
-	if(size ==0)
-	{
-		buffer = new Buffer();
-		buffer->holder = n;
-		size++;
-		buffer->next = NULL;
-		return;
-	}
-	
-	Buffer* s = buffer;
-	while(s->next != 0) s = s->next;
-	s->next = new Buffer();
-	s = s->next;
-	s->holder = n;
-	s->next = NULL;
+	Buffer * bf = new Buffer();
+	bf->holder = n;
+	bf->next = buffer;
+	buffer = bf;
 	size++;
 	
 }
