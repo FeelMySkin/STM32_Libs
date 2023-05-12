@@ -34,7 +34,7 @@ void ListBuffer<T>::Add(T n)
 //
 
 template <class T>
-void ListBuffer<T>::Delete(uint16_t n)
+T ListBuffer<T>::Delete(uint16_t n)
 {
 	if(size ==0 || n >= size) return;
 	
@@ -47,8 +47,10 @@ void ListBuffer<T>::Delete(uint16_t n)
 	
 	if(deleter->next != NULL) s->next = deleter->next;
 	if(n == 0) buffer = buffer->next;
+	T returner = deleter->holder;
 	delete deleter;
 	size--;
+	return returner;
 	
 }
 //
