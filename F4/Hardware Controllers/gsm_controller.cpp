@@ -799,7 +799,13 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 	
 	for(int i = 0;i<30;++i)
 	{
+		Send("AT+CGREG=1\r");
+		vTaskDelay(500);
+		Send("AT+CEREG=1\r");
+		vTaskDelay(500);
 		Send("AT+CGREG?\r",10);
+		vTaskDelay(500);
+		Send("AT+CEREG?\r",10);
 		vTaskDelay(500);
 		WaitMessage(false,10);
 		while(ReadAnswer())
@@ -837,9 +843,9 @@ void GSM_Controller::ConnectToServer(Connection conn_setup)
 		Send("AT+NETOPEN\r");
 		Send("AT+CIPOPEN=0,\"TCP\",\"");
 		if(GetLengthToSymbol(conn_setup.server1,0) > 0) Send(conn_setup.server1,GetLengthToSymbol(conn_setup.server1,0));
-		Send("\",\"",3);
+		Send("\",",2);
 		if(GetLengthToSymbol(conn_setup.port1,0) > 0) Send(conn_setup.port1,GetLengthToSymbol(conn_setup.port1,0));
-		Send("\"\r",2);
+		Send("\r",1);
 		vTaskDelay(200);
 	}
 	ReadAnswer();
