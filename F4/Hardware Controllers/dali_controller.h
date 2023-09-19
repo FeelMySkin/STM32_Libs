@@ -135,7 +135,7 @@ class DaliController
 		void CheckKZ();
 	
 		DALI_STATE_MACHINE state;
-		bool send_completed,receive_completed; /** send or receive completed flags */
+		bool send_completed,receive_completed, line_err; /** send or receive completed flags */
 		bool kz_state; /** is short circuit flag */
 		uint32_t received; /** received message */
 		uint8_t recv_bytes; /** received message length */

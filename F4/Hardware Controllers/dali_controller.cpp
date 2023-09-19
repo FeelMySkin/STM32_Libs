@@ -73,7 +73,7 @@ void DaliController::InitTIM()
 	LL_TIM_EnableCounter(dali.dali_tim);
 	
 	/**Enable IRQHAndler on TIM* */
-	EnableTimIRQn(dali.dali_tim,0);
+	EnableTimIRQn(dali.dali_tim,1);
 	
 }
 //
@@ -213,7 +213,11 @@ void DaliController::ReadData()
 		else recv_buf[i] = DALI_PULSE_ERROR;
 	}
 	/**If there is less than 5 pulses - error (return) */
-	if(recv_cnt<=5) return;
+	if(recv_cnt<=5)
+	{
+		line_err = true;
+		return;
+	}
 	
 	bool zero = false; /** current bit zero or not zero flag */
 	received = 0;
@@ -324,7 +328,7 @@ void DaliController::ProcessCounter()
 			recv_buf[recv_cnt] = 1;
 		}
 		/*If sampled long state - Decode*/
-		if(recv_buf[recv_cnt]>=3*DALI_SAMPLINGS)
+		if(recv_buf[recv_cnt]>=3*DALI_SAMPLINGS && ((dali.rx_logic == DALI_LOGIC_NEGATIVE && bit_state == 0) || (dali.rx_logic == DALI_LOGIC_POSITIVE && bit_state == 1)))
 		{
 			recv_cnt++;
 			state = DALI_STATE_IDLE;
@@ -362,7 +366,7 @@ void DaliController::EnableRecvInterrupt(bool state)
 		LL_EXTI_Init(&exti);
 		irq_en = true;
 		
-		EnableExtiIRQn(dali.callback_line,0);
+		EnableExtiIRQn(dali.callback_line,2);
 	}
 	else
 	{
