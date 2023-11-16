@@ -48,9 +48,6 @@ struct ADC_InitStruct
 	uint32_t		dma_channel;
 };
 
-//#define size 3
-//#define samples 10
-//template <uint8_t size,uint8_t samples>
 class ADCController
 {
 	public:
@@ -65,6 +62,13 @@ class ADCController
 		void ProcessAll();
 		void ProcessInner();
 		void EnableDmaInterrupt(bool state);
+		/**
+		 * @brief Get the Pointer To Counted Measure 
+		 * 
+		 * @param ch_num channel number (0~15)
+		 * @return (float*) pointer to *results
+		 */
+		double *GetPointerToChannel(uint8_t ch_num);
 		bool first_data_gained;
 	
 	

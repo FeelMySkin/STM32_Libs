@@ -160,7 +160,7 @@ void ADCController::InitDMA()
 	dma.PeriphRequest = LL_DMAMUX_REQ_ADC1;
 	LL_DMA_Init(init.dma,init.dma_channel,&dma);
 	
-	LL_DMA_EnableIT_TC(ADC_DMA,ADC_DMA_CH);
+	LL_DMA_EnableIT_TC(this->init.dma,this->init.dma_channel);
 	LL_DMA_EnableChannel(init.dma,init.dma_channel);
 	
 }
@@ -178,8 +178,8 @@ void ADCController::InitMemory()
 
 void ADCController::EnableDmaInterrupt(bool state)
 {
-	if(state) EnableDmaIRQn(ADC_DMA,ADC_DMA_CH,1);
-	else DisableDmaIRQn(ADC_DMA,ADC_DMA_CH);
+	if(state) EnableDmaIRQn(this->init.dma,this->init.dma_channel,1);
+	else DisableDmaIRQn(this->init.dma,this->init.dma_channel);
 }
 //
 
@@ -325,6 +325,18 @@ double ADCController::getMeasure(uint32_t ch_num)
 	return 0xFF;
 }
 //
+
+double *ADCController::GetPointerToChannel(uint8_t ch_num)
+{
+	/** find corresponding channel number and return pointer to result */
+	for(int i = 0;i<size;++i)
+	{
+		if(adc[i].ch_num == ch_num) return &results[i];
+	}
+	
+	/**or return 0 */
+	return 0x00;
+}
 
 void ADCController::SwapChannels(uint8_t ch1, uint8_t ch2)
 {
