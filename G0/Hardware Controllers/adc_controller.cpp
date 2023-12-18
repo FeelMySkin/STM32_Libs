@@ -311,7 +311,7 @@ void ADCController::ProcessAll()
 
 void ADCController::ProcessInner()
 {
-	Process(flags.v_ptr);
+	Process(V_REF_CH);
 }
 //
 
