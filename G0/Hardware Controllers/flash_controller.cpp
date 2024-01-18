@@ -35,7 +35,10 @@ void FlashController::SetFlashPointer(uint32_t ptr)
 
 void FlashController::EndWriting()
 {
+	if(block_ptr == 0) return;
     memcpy((uint8_t*)alligned_addr,block_to_write,8);
+	__nop();
+	while(FLASH->SR &= FLASH_SR_BSY1) __nop();
     block_ptr = 0;
     alligned_addr+=8;
     v_addr = alligned_addr;

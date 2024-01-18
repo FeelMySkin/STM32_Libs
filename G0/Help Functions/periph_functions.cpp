@@ -141,6 +141,20 @@ void EnableUsartIRQn(USART_TypeDef* usart,uint8_t priority)
 		NVIC_EnableIRQ(USART2_IRQn);
 		NVIC_SetPriority(USART2_IRQn,priority);
 	}
+	#ifdef USART3
+	else if(usart == USART3)
+	{
+		NVIC_EnableIRQ(USART3_4_IRQn);
+		NVIC_SetPriority(USART3_4_IRQn,priority);
+	}
+	#endif
+	#ifdef USART4
+	else if(usart == USART4)
+	{
+		NVIC_EnableIRQ(USART3_4_IRQn);
+		NVIC_SetPriority(USART3_4_IRQn,priority);
+	}
+	#endif
 }
 
 void DisableExtiIRQn(uint32_t exti_line)

@@ -21,13 +21,27 @@ class ModbusController
 {
     public:
         void Init(ModbusController_InitStruct*);
+        void SendData(uint8_t* data, uint16_t len);
+        uint8_t* GetData(){flags.received = false; return frame;};
+        bool IsReceived() {return flags.received;}
+        void ProcessUART();
+        void ProcessTick();
+
 
     private:
         void InitGPIO(ModbusController_InitStruct*);
         void InitUART(ModbusController_InitStruct*);
         void SetTX(bool);
 
-        uint8_t frame[256];
+        uint8_t frame[256], awaiter;
+        uint16_t frame_ptr;
+        uint16_t to_send;
+
+        struct  __attribute__((packed)){
+            bool sending:1;
+            bool receiving:1;
+            bool received:1;
+        }flags;
 
         struct
         {
