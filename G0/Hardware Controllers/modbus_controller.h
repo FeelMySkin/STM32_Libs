@@ -23,7 +23,10 @@ class ModbusController
         void Init(ModbusController_InitStruct*);
         void SendData(uint8_t* data, uint16_t len);
         uint8_t* GetData(){flags.received = false; return frame;};
+        uint16_t GetLen(){return frame_ptr;}
         bool IsReceived() {return flags.received;}
+        bool IsSending() {return flags.sending;}
+        bool IsReceiving() {return flags.receiving;}
         void ProcessUART();
         void ProcessTick();
 
