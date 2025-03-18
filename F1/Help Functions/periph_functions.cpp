@@ -454,6 +454,7 @@ void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t channel)
 
 uint32_t GetTimOC(TIM_TypeDef* tim,uint32_t channel)
 {
+	
 	if(channel == LL_TIM_CHANNEL_CH1) return LL_TIM_OC_GetCompareCH1(tim);
 	if(channel == LL_TIM_CHANNEL_CH2) return LL_TIM_OC_GetCompareCH2(tim);
 	if(channel == LL_TIM_CHANNEL_CH3) return LL_TIM_OC_GetCompareCH3(tim);
