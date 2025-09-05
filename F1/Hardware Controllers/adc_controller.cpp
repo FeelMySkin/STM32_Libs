@@ -57,8 +57,8 @@ void ADCController::Init(ADC_InitStruct in_str,uint8_t samples)
 	InitGPIO();
 	InitDMA();
 	InitLines();
-	
-	LL_ADC_REG_StartConversion(ADC1);
+
+	LL_ADC_REG_StartConversionSWStart(ADC1);
 }
 //
 
@@ -66,7 +66,7 @@ void ADCController::InitGPIO()
 {	
 	LL_GPIO_InitTypeDef gpio;
 	gpio.Mode = LL_GPIO_MODE_ANALOG;
-	gpio.Pull = LL_GPIO_PULL_NO;
+	gpio.Pull = LL_GPIO_PULL_UP;
 	gpio.Speed = LL_GPIO_SPEED_FREQ_HIGH;
 	for(int i = 0;i<size;++i)
 	{
@@ -78,40 +78,46 @@ void ADCController::InitGPIO()
 
 void ADCController::InitLines()
 {
-	
-	LL_ADC_SetCommonPathInternalCh(ADC1_COMMON,
-	flags.voltage?LL_ADC_PATH_INTERNAL_VREFINT:0 | 
+	LL_ADC_SetCommonPathInternalCh(ADC12_COMMON,
+	(flags.voltage?LL_ADC_PATH_INTERNAL_VREFINT:0) | 
 	#ifdef LL_ADC_PATH_INTERNAL_VBAT
-		flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0 |
+		(flags.bat?LL_ADC_PATH_INTERNAL_VBAT:0) |
 	#endif
-	flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0);
+	(flags.temp?LL_ADC_PATH_INTERNAL_TEMPSENSOR:0));
+	LL_ADC_REG_StartConversionExtTrig(ADC1,LL_ADC_REG_TRIG_EXT_RISING);
+	LL_ADC_Enable(ADC1);
 	
 	LL_ADC_StartCalibration(ADC1);
-	while(LL_ADC_IsCalibrationOnGoing(ADC1)) asm("NOP");
+	while(LL_ADC_IsCalibrationOnGoing(ADC1)) __NOP();
+	__NOP();
+	LL_ADC_Disable(ADC1);
 	
 	LL_ADC_InitTypeDef adc_ini;
+	adc_ini.SequencersScanMode = LL_ADC_SEQ_SCAN_ENABLE;
 	adc_ini.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
-	adc_ini.Resolution = LL_ADC_RESOLUTION_12B;
-	adc_ini.Clock = LL_ADC_CLOCK_ASYNC;
-	adc_ini.LowPowerMode = LL_ADC_LP_MODE_NONE;
 	LL_ADC_Init(ADC1,&adc_ini);
 	
 	LL_ADC_REG_InitTypeDef reg;
 	reg.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
 	reg.DMATransfer = LL_ADC_REG_DMA_TRANSFER_UNLIMITED;
 	reg.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
-	reg.Overrun = LL_ADC_REG_OVR_DATA_OVERWRITTEN;
 	reg.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
+	reg.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
 	LL_ADC_REG_Init(ADC1,&reg);
+	LL_ADC_Enable(ADC1);
 	
-	LL_ADC_SetSamplingTimeCommonChannels(ADC1,samples);
 		
 	for(int i = 0;i<size;++i)
 	{
-		LL_ADC_REG_SetSequencerChAdd(ADC1,adc[i].adc_ch);
+		LL_ADC_SetChannelSamplingTime(ADC1,adc[i].adc_ch,sampling);
+		LL_ADC_REG_SetSequencerRanks(ADC1,GetRank(i),adc[i].adc_ch);
+	
 	}
+	LL_ADC_REG_SetSequencerLength(ADC1,GetRanksCount(size));
 	
 	LL_ADC_Enable(ADC1);
+	__NOP();
+	__NOP();
 }
 //
 
@@ -195,7 +201,7 @@ void ADCController::Process(uint8_t ch)
 			break;
 		
 		case ADC_TYPE_INNER_VOLTAGE:
-			results[ptr] = (1.203*4095.)/(meas_getter);
+			results[ptr] = (1.2*4095.)/(meas_getter);
 			inner_voltage = results[ptr];
 			inner_voltage_coeff = inner_voltage/4095.0;
 		break;
@@ -203,7 +209,11 @@ void ADCController::Process(uint8_t ch)
 		case ADC_TYPE_RAW:
 			results[ptr] = (meas_getter);
 		break;
+
+		default:
+		break;
 	}
+	
 }
 //
 
@@ -241,13 +251,16 @@ void ADCController::ProcessAll()
 				break;
 			
 			case ADC_TYPE_INNER_VOLTAGE:
-				results[i] = (1.203*4095.)/(meas_getter[i]);
+				results[i] = (1.2*4095.)/(meas_getter[i]);
 				inner_voltage = results[i];
 				inner_voltage_coeff = inner_voltage/4095.0;
 			break;
 			
 			case ADC_TYPE_RAW:
 				results[i] = (meas_getter[i]);
+			break;
+
+			default:
 			break;
 		}
 	}
@@ -257,7 +270,7 @@ void ADCController::ProcessAll()
 
 void ADCController::ProcessInner()
 {
-	Process(LL_ADC_CHANNEL_VREFINT);
+	Process(V_BAT_CH);
 }
 //
 
@@ -297,3 +310,46 @@ void ADCController::SortLines()
 	
 }
 //
+
+uint32_t ADCController::GetRank(uint8_t c)
+{
+	/** Sets current channel rank */
+	c=c+1;
+	if(c == 1) return LL_ADC_REG_RANK_1;
+	if(c == 2) return LL_ADC_REG_RANK_2;
+	if(c == 3) return LL_ADC_REG_RANK_3;
+	if(c == 4) return LL_ADC_REG_RANK_4;
+	if(c == 5) return LL_ADC_REG_RANK_5;
+	if(c == 6) return LL_ADC_REG_RANK_6;
+	if(c == 7) return LL_ADC_REG_RANK_7;
+	if(c == 8) return LL_ADC_REG_RANK_8;
+	if(c == 9) return LL_ADC_REG_RANK_9;
+	if(c == 10) return LL_ADC_REG_RANK_10;
+	if(c == 11) return LL_ADC_REG_RANK_11;
+	if(c == 12) return LL_ADC_REG_RANK_12;
+	if(c == 13) return LL_ADC_REG_RANK_13;
+	if(c == 14) return LL_ADC_REG_RANK_14;
+	
+	return 0;
+}
+//
+
+uint32_t ADCController::GetRanksCount(uint8_t chs)
+{
+	if(chs == 1) return LL_ADC_REG_SEQ_SCAN_DISABLE;
+	if(chs == 2) return LL_ADC_REG_SEQ_SCAN_ENABLE_2RANKS;
+	if(chs == 3) return LL_ADC_REG_SEQ_SCAN_ENABLE_3RANKS;
+	if(chs == 4) return LL_ADC_REG_SEQ_SCAN_ENABLE_4RANKS;
+	if(chs == 5) return LL_ADC_REG_SEQ_SCAN_ENABLE_5RANKS;
+	if(chs == 6) return LL_ADC_REG_SEQ_SCAN_ENABLE_6RANKS;
+	if(chs == 7) return LL_ADC_REG_SEQ_SCAN_ENABLE_7RANKS;
+	if(chs == 8) return LL_ADC_REG_SEQ_SCAN_ENABLE_8RANKS;
+	if(chs == 9) return LL_ADC_REG_SEQ_SCAN_ENABLE_9RANKS;
+	if(chs == 10) return LL_ADC_REG_SEQ_SCAN_ENABLE_10RANKS;
+	if(chs == 11) return LL_ADC_REG_SEQ_SCAN_ENABLE_11RANKS;
+	if(chs == 12) return LL_ADC_REG_SEQ_SCAN_ENABLE_12RANKS;
+	if(chs == 13) return LL_ADC_REG_SEQ_SCAN_ENABLE_13RANKS;
+	if(chs == 14) return LL_ADC_REG_SEQ_SCAN_ENABLE_14RANKS;
+
+	return 0;
+}

@@ -72,10 +72,12 @@ class ADCController
 		void InitGPIO();
 		void InitLines();
 		void InitADC();
+		uint32_t GetRank(uint8_t c);
 		void InitDMA();
 		void InitMemory();
 		void SortLines();
 		void SwapChannels(uint8_t ch1, uint8_t ch2);
+		uint32_t GetRanksCount(uint8_t chans);
 	
 		ADC_Struct *adc;
 		uint8_t size,samples;

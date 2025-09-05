@@ -5,119 +5,50 @@ void EnableExtiIRQn(uint32_t exti, uint8_t prio)
 	switch(exti)
 	{
 		case LL_EXTI_LINE_0:
+			NVIC_EnableIRQ(EXTI0_IRQn);
+			NVIC_SetPriority(EXTI0_IRQn,prio);
+		break;
+		
 		case LL_EXTI_LINE_1:
-			NVIC_EnableIRQ(EXTI0_1_IRQn);
-			NVIC_SetPriority(EXTI0_1_IRQn,prio);
+			NVIC_EnableIRQ(EXTI1_IRQn);
+			NVIC_SetPriority(EXTI1_IRQn,prio);
 		break;
 		
 		case LL_EXTI_LINE_2:
+			NVIC_EnableIRQ(EXTI2_IRQn);
+			NVIC_SetPriority(EXTI2_IRQn,prio);
+		break;
+		
+		
 		case LL_EXTI_LINE_3:
-			NVIC_EnableIRQ(EXTI2_3_IRQn);
-			NVIC_SetPriority(EXTI2_3_IRQn,prio);
+			NVIC_EnableIRQ(EXTI3_IRQn);
+			NVIC_SetPriority(EXTI3_IRQn,prio);
 		break;
 		
 		case LL_EXTI_LINE_4:
+			NVIC_EnableIRQ(EXTI4_IRQn);
+			NVIC_SetPriority(EXTI4_IRQn,prio);
+		break;
+		
 		case LL_EXTI_LINE_5:
 		case LL_EXTI_LINE_6:
 		case LL_EXTI_LINE_7:
 		case LL_EXTI_LINE_8:
 		case LL_EXTI_LINE_9:
+			NVIC_EnableIRQ(EXTI9_5_IRQn);
+			NVIC_SetPriority(EXTI9_5_IRQn,prio);
+		break;
+			
 		case LL_EXTI_LINE_10:
 		case LL_EXTI_LINE_11:
 		case LL_EXTI_LINE_12:
 		case LL_EXTI_LINE_13:
 		case LL_EXTI_LINE_14:
 		case LL_EXTI_LINE_15:
-			NVIC_EnableIRQ(EXTI4_15_IRQn);
-			NVIC_SetPriority(EXTI4_15_IRQn,prio);
+			NVIC_EnableIRQ(EXTI15_10_IRQn);
+			NVIC_SetPriority(EXTI15_10_IRQn,prio);
 		break;
 	}
-}
-//
-
-void SetExtiSource(GPIO_TypeDef* gpio,uint32_t exti_line)
-{
-	uint16_t syscfg_exti_source;
-	uint32_t syscfg_exti_line;
-	
-	if(gpio == GPIOA) syscfg_exti_source = LL_SYSCFG_EXTI_PORTA;
-	else if(gpio == GPIOB) syscfg_exti_source = LL_SYSCFG_EXTI_PORTB;
-	else if(gpio == GPIOC) syscfg_exti_source = LL_SYSCFG_EXTI_PORTC;
-	#ifdef GPIOD
-		else if(gpio == GPIOD) syscfg_exti_source = LL_SYSCFG_EXTI_PORTD;
-	#endif
-	#ifdef GPIOE
-		else if(gpio == GPIOE) syscfg_exti_source = LL_SYSCFG_EXTI_PORTE;
-	#endif
-	
-	switch(exti_line)
-	{
-		case LL_EXTI_LINE_0:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE0;
-		break;
-		
-		case LL_EXTI_LINE_1:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE1;
-		break;
-		
-		case LL_EXTI_LINE_2:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE2;
-		break;
-		
-		case LL_EXTI_LINE_3:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE3;
-		break;
-		
-		case LL_EXTI_LINE_4:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE4;
-		break;
-		
-		case LL_EXTI_LINE_5:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE5;
-		break;
-		
-		case LL_EXTI_LINE_6:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE6;
-		break;
-		
-		case LL_EXTI_LINE_7:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE7;
-		break;
-		
-		case LL_EXTI_LINE_8:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE8;
-		break;
-		
-		case LL_EXTI_LINE_9:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE9;
-		break;
-		
-		case LL_EXTI_LINE_10:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE10;
-		break;
-		
-		case LL_EXTI_LINE_11:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE11;
-		break;
-		
-		case LL_EXTI_LINE_12:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE12;
-		break;
-		
-		case LL_EXTI_LINE_13:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE13;
-		break;
-		
-		case LL_EXTI_LINE_14:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE14;
-		break;
-		
-		case LL_EXTI_LINE_15:
-			syscfg_exti_line = LL_SYSCFG_EXTI_LINE15;
-		break;
-	}
-	
-	LL_SYSCFG_SetEXTISource(syscfg_exti_source,syscfg_exti_line);
 }
 //
 
@@ -182,8 +113,9 @@ void EnableTimIRQn(TIM_TypeDef* tim,uint8_t priority)
 {
 	if(tim == TIM1)
 	{
-		NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);
-		NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn,priority);
+		
+		NVIC_EnableIRQ(TIM1_UP_IRQn);
+		NVIC_SetPriority(TIM1_UP_IRQn,priority);
 	}
 	#ifdef TIM2
 	else if(tim == TIM2)
@@ -270,28 +202,40 @@ void DisableExtiIRQn(uint32_t exti_line)
 	switch(exti_line)
 	{
 		case LL_EXTI_LINE_0:
+			NVIC_DisableIRQ(EXTI0_IRQn);
+		break;
+		
 		case LL_EXTI_LINE_1:
-			NVIC_DisableIRQ(EXTI0_1_IRQn);
+			NVIC_DisableIRQ(EXTI1_IRQn);
 		break;
 		
 		case LL_EXTI_LINE_2:
+			NVIC_DisableIRQ(EXTI2_IRQn);
+		break;
+		
 		case LL_EXTI_LINE_3:
-			NVIC_DisableIRQ(EXTI2_3_IRQn);
+			NVIC_DisableIRQ(EXTI3_IRQn);
 		break;
 		
 		case LL_EXTI_LINE_4:
+			NVIC_DisableIRQ(EXTI4_IRQn);
+		break;
+		
 		case LL_EXTI_LINE_5:
 		case LL_EXTI_LINE_6:
 		case LL_EXTI_LINE_7:
 		case LL_EXTI_LINE_8:
 		case LL_EXTI_LINE_9:
+			NVIC_DisableIRQ(EXTI9_5_IRQn);
+		break;
+			
 		case LL_EXTI_LINE_10:
 		case LL_EXTI_LINE_11:
 		case LL_EXTI_LINE_12:
 		case LL_EXTI_LINE_13:
 		case LL_EXTI_LINE_14:
 		case LL_EXTI_LINE_15:
-			NVIC_DisableIRQ(EXTI4_15_IRQn);
+			NVIC_DisableIRQ(EXTI15_10_IRQn);
 		break;
 	}
 }
@@ -303,25 +247,46 @@ void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t channel,uint8_t priority)
 	{
 		switch(channel)
 		{
+			
 			case LL_DMA_CHANNEL_1:
-				NVIC_EnableIRQ(DMA1_Ch1_IRQn);
-				NVIC_SetPriority(DMA1_Ch1_IRQn,priority);
+				NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+				NVIC_SetPriority(DMA1_Channel1_IRQn,priority);
 			break;
 			
 			case LL_DMA_CHANNEL_2:
+				NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+				NVIC_SetPriority(DMA1_Channel2_IRQn,priority);
+			break;
+			
 			case LL_DMA_CHANNEL_3:
-				NVIC_EnableIRQ(DMA1_Ch2_3_DMA2_Ch1_2_IRQn);
-				NVIC_SetPriority(DMA1_Ch2_3_DMA2_Ch1_2_IRQn,priority);
+				NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+				NVIC_SetPriority(DMA1_Channel3_IRQn,priority);
 			break;
 			
 			case LL_DMA_CHANNEL_4:
+				NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+				NVIC_SetPriority(DMA1_Channel4_IRQn,priority);
+			break;
+			
 			case LL_DMA_CHANNEL_5:
+				NVIC_EnableIRQ(DMA1_Channel5_IRQn);
+				NVIC_SetPriority(DMA1_Channel5_IRQn,priority);
+			break;
+			
 			#ifdef LL_DMA_CHANNEL6
 			case LL_DMA_CHANNEL_6:
-			case LL_DMA_CHANNEL_7:
+				NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+				NVIC_SetPriority(DMA1_Channel6_IRQn,priority);
+			break;
 			#endif
-				NVIC_EnableIRQ(DMA1_Ch4_7_DMA2_Ch3_5_IRQn);
-				NVIC_SetPriority(DMA1_Ch4_7_DMA2_Ch3_5_IRQn,priority);
+			
+			#ifdef LL_DMA_CHANNEL7
+			case LL_DMA_CHANNEL_7:
+				NVIC_EnableIRQ(DMA1_Channel7_IRQn);
+				NVIC_SetPriority(DMA1_Channel7_IRQn,priority);
+			break;
+			#endif
+			
 			break;
 		}
 	}
@@ -409,21 +374,37 @@ void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t channel)
 		switch(channel)
 		{
 			case LL_DMA_CHANNEL_1:
-				NVIC_DisableIRQ(DMA1_Ch1_IRQn);
+				NVIC_DisableIRQ(DMA1_Channel1_IRQn);
 			break;
 			
 			case LL_DMA_CHANNEL_2:
+				NVIC_DisableIRQ(DMA1_Channel2_IRQn);
+			break;
+			
 			case LL_DMA_CHANNEL_3:
-				NVIC_DisableIRQ(DMA1_Ch2_3_DMA2_Ch1_2_IRQn);
+				NVIC_DisableIRQ(DMA1_Channel3_IRQn);
 			break;
 			
 			case LL_DMA_CHANNEL_4:
+				NVIC_DisableIRQ(DMA1_Channel4_IRQn);
+			break;
+			
 			case LL_DMA_CHANNEL_5:
+				NVIC_DisableIRQ(DMA1_Channel5_IRQn);
+			break;
+			
 			#ifdef LL_DMA_CHANNEL6
 			case LL_DMA_CHANNEL_6:
-			case LL_DMA_CHANNEL_7:
+				NVIC_DisableIRQ(DMA1_Channel6_IRQn);
+			break;
 			#endif
-				NVIC_DisableIRQ(DMA1_Ch4_7_DMA2_Ch3_5_IRQn);
+			
+			#ifdef LL_DMA_CHANNEL7
+			case LL_DMA_CHANNEL_7:
+				NVIC_DisableIRQ(DMA1_Channel7_IRQn);
+			break;
+			#endif
+			
 			break;
 		}
 	}
@@ -463,28 +444,3 @@ uint32_t GetTimOC(TIM_TypeDef* tim,uint32_t channel)
 }
 //
 
-void RemapDmaUsart(USART_TypeDef* uart,uint32_t channel)
-{
-	if(uart == USART1)
-	{
-		if(channel == LL_DMA_CHANNEL_2) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART1TX_RMP_DMA1CH2);
-		else if(channel == LL_DMA_CHANNEL_3) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART1RX_RMP_DMA1CH3);
-		else if(channel == LL_DMA_CHANNEL_4) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART1TX_RMP_DMA1CH4);
-		else if(channel == LL_DMA_CHANNEL_5) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART1RX_RMP_DMA1CH5);
-	}
-	#ifdef USART2
-	else if(uart == USART2)
-	{
-		if(channel == LL_DMA_CHANNEL_5 || channel == LL_DMA_CHANNEL_4) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART2_RMP_DMA1CH54);
-		else if( channel == LL_DMA_CHANNEL_6 || channel == LL_DMA_CHANNEL_7) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART2_RMP_DMA1CH67);
-	}
-	#endif
-	#ifdef USART3
-	else if(uart == USART3)
-	{
-		if(channel == LL_DMA_CHANNEL_2 || channel == LL_DMA_CHANNEL_3) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART3_RMP_DMA1CH32);
-		else if( channel == LL_DMA_CHANNEL_6 || channel == LL_DMA_CHANNEL_7) LL_SYSCFG_SetRemapDMA_USART(LL_SYSCFG_USART3_RMP_DMA1CH67);
-	}
-	#endif
-}
-//
