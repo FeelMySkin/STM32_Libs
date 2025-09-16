@@ -287,7 +287,6 @@ void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t channel,uint8_t priority)
 			break;
 			#endif
 			
-			break;
 		}
 	}
 	#ifdef DMA2
@@ -296,20 +295,24 @@ void EnableDmaIRQn(DMA_TypeDef* dma, uint32_t channel,uint8_t priority)
 		switch(channel)
 		{
 			case LL_DMA_CHANNEL_1:
+				NVIC_EnableIRQ(DMA2_Channel1_IRQn);
+				NVIC_SetPriority(DMA2_Channel1_IRQn,priority);
+			break;
+
 			case LL_DMA_CHANNEL_2:
-				NVIC_EnableIRQ(DMA1_Ch2_3_DMA2_Ch1_2_IRQn);
-				NVIC_SetPriority(DMA1_Ch2_3_DMA2_Ch1_2_IRQn,priority);
+				NVIC_EnableIRQ(DMA2_Channel2_IRQn);
+				NVIC_SetPriority(DMA2_Channel2_IRQn,priority);
 			break;
 			
 			case LL_DMA_CHANNEL_3:
+				NVIC_EnableIRQ(DMA2_Channel3_IRQn);
+				NVIC_SetPriority(DMA2_Channel3_IRQn,priority);
+			break;
+
 			case LL_DMA_CHANNEL_4:
 			case LL_DMA_CHANNEL_5:
-			#ifdef LL_DMA_CHANNEL6
-			case LL_DMA_CHANNEL_6:
-			case LL_DMA_CHANNEL_7:
-			#endif
-				NVIC_EnableIRQ(DMA1_Ch4_7_DMA2_Ch3_5_IRQn);
-				NVIC_SetPriority(DMA1_Ch4_7_DMA2_Ch3_5_IRQn,priority);
+				NVIC_EnableIRQ(DMA2_Channel4_5_IRQn);
+				NVIC_SetPriority(DMA2_Channel4_5_IRQn,priority);
 			break;
 		}
 	}
@@ -405,7 +408,6 @@ void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t channel)
 			break;
 			#endif
 			
-			break;
 		}
 	}
 	#ifdef DMA2
@@ -414,18 +416,20 @@ void DisableDmaIRQn(DMA_TypeDef* dma, uint32_t channel)
 		switch(channel)
 		{
 			case LL_DMA_CHANNEL_1:
+				NVIC_DisableIRQ(DMA2_Channel1_IRQn);
+			break;
+
 			case LL_DMA_CHANNEL_2:
-				NVIC_DisableIRQ(DMA1_Ch2_3_DMA2_Ch1_2_IRQn);
+				NVIC_DisableIRQ(DMA2_Channel2_IRQn);
 			break;
 			
 			case LL_DMA_CHANNEL_3:
+				NVIC_DisableIRQ(DMA2_Channel3_IRQn);
+			break;
+
 			case LL_DMA_CHANNEL_4:
 			case LL_DMA_CHANNEL_5:
-			#ifdef LL_DMA_CHANNEL6
-			case LL_DMA_CHANNEL_6:
-			case LL_DMA_CHANNEL_7:
-			#endif
-				NVIC_DisableIRQ(DMA1_Ch4_7_DMA2_Ch3_5_IRQn);
+				NVIC_DisableIRQ(DMA2_Channel4_5_IRQn);
 			break;
 		}
 	}

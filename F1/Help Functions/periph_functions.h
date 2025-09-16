@@ -32,7 +32,7 @@ void SetExtiSource(GPIO_TypeDef* gpio,uint32_t exti_line);
 void RemapDmaUsart(USART_TypeDef*,uint32_t channel);
 uint32_t GetExtiLine(uint32_t pin);
 uint32_t GetTimOC(TIM_TypeDef* tim,uint32_t channel);
-void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_stream);
+void ClearDmaTCFlag(DMA_TypeDef* dma, uint32_t dma_channel);
 
 
 #endif
